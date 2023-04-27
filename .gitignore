@@ -1,0 +1,35 @@
+**/obj
+*_bin
+!aa_bin #aa_bin又会被包含----感叹号
+*.o
+*.a
+*.so
+*.lo
+*.la
+*.al
+*.log
+*.swp
+tags
+*~
+**/.cproject
+**/.project
+**/.settings
+**/.vscode
+**/node_modules
+_decoder/
+file_dec/
+lib/
+test/
+connet/
+include/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+*.mvn
+target/
+**/*.jar
+out/
+*.class
