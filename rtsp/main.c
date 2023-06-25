@@ -105,15 +105,18 @@ int server_write_handle(event_t ev)
 }
 int unix_write_handle(event_t ev)
 {
-	int n;
+	int n=-1;
 	conn_t c = ev->data;
-	while(c->write->ready){
+	while(c->write->ready && unixBuf->size){
+		n=-1;
 		if(unixBuf->size>=4096)	
 			n = c->send(c,(u_char *)unixBuf->head,4096);
 		else {
 			n = c->send(c,(u_char *)unixBuf->head,unixBuf->size);
 		}
-		buf_consume(unixBuf,n);
+		if(n>0){
+			buf_consume(unixBuf,n);
+		}
 	}
 #if 0
 	if(!c->write->ready){
@@ -159,6 +162,7 @@ int main()
 	init_epoll();
 	list = create_pool_list();
 
+	unixBuf=buf_new(512*1024);
 	init_media();
 	lc = create_listening(10000);
 	lc->ls_handler = init_accepted_conn;
@@ -171,7 +175,6 @@ int main()
 	unixFd->read->handler = server_read_handle;
 	unixFd->write->handler = unix_write_handle;
 	add_event(unixFd->read,READ_EVENT);
-	unixBuf=buf_new(512*1024);
 
 	rtpPkg = malloc(sizeof(struct rtpPkg_st));
 	
@@ -181,7 +184,7 @@ int main()
 	rc[1]->chn = 1;
 	rc[2] = init_rtsp_clients(list,"172.16.10.42",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
 	rc[2]->chn = 2;
-	rc[3] = init_rtsp_clients(list,"172.16.10.2",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
+	rc[3] = init_rtsp_clients(list,"172.16.10.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
 	rc[3]->chn = 3;
 #if 0
 	rc[1] = init_rtsp_clients(list,"192.168.0.5",554,"admin","fhjt123456","/h264/ch1/main/av_stream");	
