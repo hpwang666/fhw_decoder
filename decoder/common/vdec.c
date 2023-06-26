@@ -5,6 +5,7 @@
 #include "vdec.h"
 #include "vo.h"
 #include "vgs.h"
+#include "decoder.h"
  
  
 /* g_s32VBSource: 0 to module common vb, 1 to private vb, 2 to user vb
@@ -12,14 +13,14 @@
 FY_S32 g_s32VBSource = 0;
 //VB_POOL g_ahVbPool[VB_MAX_POOLS] = {[0 ... (VB_MAX_POOLS-1)] = VB_INVALID_POOLID};
 
-static VDEC_CHN_ATTR_S stVdecChnAttr[VDEC_MAX_CHN_NUM];
+static VDEC_CHN_ATTR_S stVdecChnAttr[CHNS];
 
  
  int vdec_start_mux_voChn_ext(FY_U32	s32ChnNum, int enMode,  int video_width, int video_height, PAYLOAD_TYPE_E pt_types[],int fb_cnt, int bind,VO_LAYER VoLayer,VO_CHN startVoChn)
  {
     int	i;
 	FY_S32 ret;
-	SIZE_S astSize[VDEC_MAX_CHN_NUM];//32个
+	SIZE_S astSize[CHNS];//
 	VB_CONF_S stModVbConf;
 	//PAYLOAD_TYPE_E pt_types[VDEC_MAX_CHN_NUM];
 	//char* filenames[VDEC_MAX_CHN_NUM];
@@ -27,9 +28,14 @@ static VDEC_CHN_ATTR_S stVdecChnAttr[VDEC_MAX_CHN_NUM];
 	int bind_vo_channel;
     
     
-    for(i = 0 ; i < s32ChnNum; i++) {
-    	astSize[i].u32Width	= video_width;
-	    astSize[i].u32Height = video_height;
+	//这里只需要将前4个通道设置成1080P分辨率
+    for(i = 0 ; i < 4; i++) {
+    	astSize[i].u32Width	= 1920;
+	    astSize[i].u32Height = 1088;
+    }
+    for(i = 4 ; i < s32ChnNum; i++) {
+    	astSize[i].u32Width	= 640;
+	    astSize[i].u32Height = 360;
     }
 
 	FY_MPI_VDEC_GetModParam(&mod_parm);
@@ -48,7 +54,7 @@ static VDEC_CHN_ATTR_S stVdecChnAttr[VDEC_MAX_CHN_NUM];
 
 
 	vdec_chnAttr(s32ChnNum, &stVdecChnAttr[0],	pt_types, astSize);
-	for(i=0;i<VDEC_MAX_CHN_NUM;i++)
+	for(i=0;i<CHNS;i++)
 		stVdecChnAttr[i].stVdecVideoAttr.enMode = VIDEO_MODE_FRAME;
 
 

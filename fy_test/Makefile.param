@@ -1,0 +1,19 @@
+# mpp code Makefile.param
+
+ifeq ($(PARAM_FILE), )
+     PARAM_FILE:=../../../Makefile.param
+     include $(PARAM_FILE)
+endif
+
+COMMON_DIR :=$(abspath $(PWD)/../../common)
+
+INC_FLAGS := -I$(REL_INC) -I$(MPP_PATH)/drv_include -I$(COMMON_DIR)
+
+INC_FLAGS += -I$(SDK_PATH)/mpp/$(EXTDRV)/nvp6134
+
+CFLAGS := -Wall -g $(INC_FLAGS)  $(MPP_CFLAGS) -Wno-date-time $(LIBS_CFLAGS)
+LDFLAGS := $(LDFLAGS) -L $(MPP_PATH)/lib
+LIBS := -l:libmpi.a  -l:libaudio_codec.a -lpthread -lm -ldl
+
+COMM_SRC := $(wildcard $(COMMON_DIR)/*.c)
+COMM_OBJ := $(COMM_SRC:%.c=%.o)

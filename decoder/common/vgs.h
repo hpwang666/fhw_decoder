@@ -10,6 +10,7 @@
 
 
 FY_S32 vdec_vgs_init_layer(FY_S32 s32ChnNum, int enMode,VO_LAYER VoLayer);
+FY_S32 vdec_vgs_reinit_layer(FY_S32 s32ChnNum, int enMode,VO_LAYER VoLayer);
 FY_S32 vdec_vgs_deinit(FY_S32 s32ChnNum);
 FY_S32 vgs_bind_vo(VGS_CHN VgsChn,VO_LAYER VoLayer, VO_CHN VoChn);
 FY_S32 vgs_unbind_vo(VGS_CHN VgsChn,VO_LAYER VoLayer, VO_CHN VoChn);

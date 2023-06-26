@@ -1,0 +1,73 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+venc_test
+xvr_sample
+venc_integrate_test
+modules/fb/fb_test
+modules/jpeg/jpeg_test
+modules/tde/tde_test
+modules/vgs/vgs_test
+platform_driver_test/crypto/aes-test
+platform_driver_test/dma/dma_ioctl_test
+platform_driver_test/i2c_test/i2c_eeprom
+platform_driver_test/perfmon/perfmon
+platform_driver_test/uart_test/uart_test
+platform_driver_test/wdg_test/watchdog_alive_test
+platform_driver_test/wdg_test/watchdog_test
+system/vdppo-aging/aging
+suite-b/modules/bgm/bgm_test
+suite-b/modules/venc/venc_test
+suite-b/modules/slt_venc/slt_venc
+suite-b/modules/slt_bgm/slt_bgm
+!suite-b/modules/slt_bgm/result/*.*
+

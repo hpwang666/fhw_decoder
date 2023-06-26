@@ -57,7 +57,7 @@ FY_S32 decode_h264(int accessable)
 	FY_S32 s32Ret=0;
     VB_CONF_S stVbConf ;
 
-    PAYLOAD_TYPE_E pt_types[VDEC_MAX_CHN_NUM];
+    PAYLOAD_TYPE_E pt_types[CHNS];
     memset(&stVbConf, 0, sizeof(VB_CONF_S));
     stVbConf.u32MaxPoolCnt = 1;
 
@@ -68,10 +68,10 @@ FY_S32 decode_h264(int accessable)
     sys_init(&stVbConf);
     vo_init(FY_TRUE, VO_OUTPUT_1080P60);
 
-    for(i=0;i<VDEC_MAX_CHN_NUM;i++){
+    for(i=0;i<CHNS;i++){
         pt_types[i]=PT_H264;
     }
-    vdec_start_mux_voChn_ext(VDEC_CHN_NUM_4, VO_MODE_4MUX, HD_WIDTH,HD_HEIGHT,\
+    vdec_start_mux_voChn_ext(CHNS, VO_MODE_4MUX, HD_WIDTH,HD_HEIGHT,\
 		   					pt_types,3, 1,FY_VO_LAYER_VHD0,0);
     return s32Ret;
 }

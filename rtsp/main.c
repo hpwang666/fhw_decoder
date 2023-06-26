@@ -71,6 +71,7 @@ int server_read_handle(event_t ev)
 			chnStatus.subwin =netCfg->subwin;
 			
 			//如果配置4画面，那么以下就会配置4次
+			send_pkg(unixFd,CFG_SUBWIN,(u_char *)&chnStatus,sizeof(struct chnStatus_st));
 			//ring_push(ring,CFG_SUBWIN,(u_char *)&chnStatus,sizeof(struct chnStatus_st));
 			buf_consume(buf, pkg_len);
 		
@@ -151,7 +152,7 @@ int main()
 	msec64 t,delta;
 	int ret;	
 	conn_t lc;
-	rtspClient_t rc[16];
+//	rtspClient_t rc[16];
 	
 	signal(SIGTERM, on_sig_term);
 	signal(SIGQUIT, on_sig_term);
@@ -178,6 +179,7 @@ int main()
 
 	rtpPkg = malloc(sizeof(struct rtpPkg_st));
 	
+#if 0
 	rc[0] = init_rtsp_clients(list,"172.16.10.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
 	rc[0]->chn = 0;
 	rc[1] = init_rtsp_clients(list,"172.16.10.43",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
@@ -186,7 +188,7 @@ int main()
 	rc[2]->chn = 2;
 	rc[3] = init_rtsp_clients(list,"172.16.10.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
 	rc[3]->chn = 3;
-#if 0
+
 	rc[1] = init_rtsp_clients(list,"192.168.0.5",554,"admin","fhjt123456","/h264/ch1/main/av_stream");	
 	rc[1]->chn = 1;
 	rc[2] = init_rtsp_clients(list,"192.168.0.6",554,"admin","fhjt123456","/h264/ch1/main/av_stream");	

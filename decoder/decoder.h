@@ -25,6 +25,10 @@ typedef enum{PKG_BAD=-1,PKG_MIN=0,PKG_TXT=1} PKG_TYPE;
 #define  VDEC_CHN_NUM_16 (16)
 #define  VDEC_CHN_NUM_4 (4)
 
+
+#define CHNS (VDEC_CHN_NUM_16)
+
+
 extern decEnv_t  decEnv;
 struct decoder_st{
 	int 	id;
@@ -39,6 +43,7 @@ struct decoder_st{
 	unsigned EN_SPS:1;//用来标志 SPS PPS 只需要传输一次
 	unsigned PKG_STARTED:1;			//BUFER 是否接收到了  包头
 	unsigned err:1;  				//表示当前画面为无视频状态，当有视频流来的时候，应该清除该标志
+	unsigned startRcv:1;			//表示开始接收码流
 	unsigned refused:1;				//表示此时不接受视频
 	unsigned waitIfream:1;
 };
@@ -60,7 +65,6 @@ struct rtspChnStatus_st{ //和RTSPclient通信的接口，当不是RTSP数据包
 
 
 struct decEnv_st{
-	VIDEO_FRAME_INFO_S stUsrPic0;
 	decoder_t dec25;
 };
 
