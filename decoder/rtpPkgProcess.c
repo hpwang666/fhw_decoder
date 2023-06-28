@@ -179,7 +179,8 @@ void pkgProcess(u_char *rtpPkg)
 	else {
 
 		if(decEnv->dec25[pkg->cmd].err){//之前还有“无视频”标志
-			s32Ret = FY_MPI_VDEC_EnableUserPic((VDEC_CHN)pkg->cmd,FY_FALSE);
+			//s32Ret = FY_MPI_VDEC_EnableUserPic((VDEC_CHN)pkg->cmd,FY_FALSE);
+			s32Ret = FY_MPI_VDEC_DisableUserPic((VDEC_CHN)pkg->cmd);
 			if(s32Ret != FY_SUCCESS)
 			{	
 				printf("FY_MPI_VDEC_DisableUserPic fail for %#x!\n", s32Ret);
