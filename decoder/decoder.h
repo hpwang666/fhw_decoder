@@ -10,6 +10,7 @@
 #include "common.h"
 #include "dec_buf.h"
 #include "vdec.h"
+#include "mpi_vo.h"
 
 #define data_abs(a,b) ((a>=b)?(a-b):(b-a))
 typedef struct decoder_st *decoder_t;

@@ -34,6 +34,11 @@ void pkgProcess(u_char *rtpPkg)
 
 				if(decEnv->dec25[rtspChnStatus->id].err){
 					decEnv->dec25[rtspChnStatus->id].err = 0;
+					s32Ret = FY_MPI_VDEC_DisableUserPic((VDEC_CHN)rtspChnStatus->id);
+					if(s32Ret != FY_SUCCESS)
+					{	
+						printf("FY_MPI_VDEC_DisableUserPic fail for %#x!\n", s32Ret);
+					}
 				}							
 				dec_buf_init(decEnv->dec25[rtspChnStatus->id].buf);
 				decEnv->dec25[rtspChnStatus->id].EN_PPS=0;
@@ -67,15 +72,7 @@ void pkgProcess(u_char *rtpPkg)
 			}
 		}
 		else{//因为分屏原因，这里只会处理 0  通道
-			/* for(i=0; i<16; i++)
-			   {
-			   s32Ret = vout_unbind_vpss(VO_LAYER_VHD0, i, i, VPSS_CHN0);
-			   if(s32Ret != HI_SUCCESS)
-			   {	    
-			   printf("vpss unbind vo fail for %#x!\n", s32Ret);
-			//goto END6;
-			}	
-			} */
+			//
 			//通道没有显示，只要不发视频流，就不会有问题。
 			//比如1通道下，继续发4通道的数据，会导致解码器 a005800f 缓存溢出错误
 
@@ -89,6 +86,11 @@ void pkgProcess(u_char *rtpPkg)
 					//goto END6;
 				}
 				if(decEnv->dec25[i].err){
+					s32Ret = FY_MPI_VDEC_DisableUserPic((VDEC_CHN)i);
+					if(s32Ret != FY_SUCCESS)
+					{	
+						printf("FY_MPI_VDEC_DisableUserPic fail for %#x!\n", s32Ret);
+					}
 					decEnv->dec25[i].err = 0;
 				}		
 				FY_MPI_VDEC_ResetChn(i);
@@ -101,7 +103,7 @@ void pkgProcess(u_char *rtpPkg)
 				decEnv->dec25[i].startRcv= 0;
 
 #if 0
-				s32Ret = FY_MPI_VO_ChnBuffer(FY_VO_LAYER_VHD0, i, FY_TRUE);
+				s32Ret = FY_MPI_VO_(FY_VO_LAYER_VHD0, i, FY_TRUE);
 				if (FY_SUCCESS != s32Ret)
 				{
 					printf("pause vo chn failed! \n");
@@ -123,19 +125,6 @@ void pkgProcess(u_char *rtpPkg)
 						printf("failed with layerMode\n");
 						layerMode=VO_MODE_4MUX;
 			}
-			for(i=0;i<CHNS;i++)
-			{
-				s32Ret = vdec_unbind_vgs((VDEC_CHN)i,(VGS_CHN)i);
-				//if(ret) goto FAIL2;
-			}
-
-			s32Ret=vdec_vgs_unbind_vo_layer(u32WndNum, FY_VO_LAYER_VHD0,0);
-			if(s32Ret != FY_SUCCESS)
-			{		
-				printf("vdec_vgs_unbind_vo_layer for %#x!\n", s32Ret);
-				//goto END4_4;
-			}
-			vdec_vgs_deinit(CHNS);
 			vdec_vo_deinit_layer(layerMode, FY_VO_LAYER_VHD0, 0, CHNS);
 
 			u32WndNum=rtspChnStatus->subwin;
@@ -158,18 +147,6 @@ void pkgProcess(u_char *rtpPkg)
 				//goto END4_4;
 			}
 
-			vdec_vgs_init_layer(CHNS, layerMode,FY_VO_LAYER_VHD0);
-			s32Ret= vdec_vgs_bind_vo_layer(rtspChnStatus->subwin,FY_VO_LAYER_VHD0,0);
-			if(s32Ret != FY_SUCCESS)
-			{		
-				printf("vdec_vgs_bind_vo_layer for %#x!\n", s32Ret);
-				//goto END4_4;
-			}
-			for(i=0;i<CHNS;i++)
-			{
-				s32Ret = vdec_bind_vgs((VDEC_CHN)i,(VGS_CHN)i);
-				//if(ret) goto FAIL2;
-			}
 			osalStartTimerEx(1,(0x00000001<<0),300);
 		}
 	}
@@ -179,15 +156,27 @@ void pkgProcess(u_char *rtpPkg)
 		if(decEnv->dec25[rtspChnStatus->id].err == 0){//
 			printf("%d :net disconnected \n",rtspChnStatus->id);
 			osalClearTaskEvent(1,0x00000001<<rtspChnStatus->id);
-			s32Ret =FY_MPI_VDEC_StopRecvStream(rtspChnStatus->id);
-			if(s32Ret != FY_SUCCESS)
-			{	
-				printf("FY_MPI_VDEC_StopRecvStream fail for %#x!\n", s32Ret);
+
+			if(decEnv->dec25[rtspChnStatus->id].startRcv){
+				s32Ret =FY_MPI_VDEC_StopRecvStream(rtspChnStatus->id);
+				if(s32Ret != FY_SUCCESS)
+				{	
+					printf("FY_MPI_VDEC_StopRecvStream fail for %#x!\n", s32Ret);
+				}
+				decEnv->dec25[rtspChnStatus->id].startRcv = 1;
 			}
+
+
 			s32Ret =FY_MPI_VDEC_ResetChn(rtspChnStatus->id);
 			if(s32Ret != FY_SUCCESS)
 			{	
 				printf("FY_MPI_VDEC_ResetChn fail for %#x!\n", s32Ret);
+			}
+
+			s32Ret =FY_MPI_VDEC_EnableUserPic((VDEC_CHN)rtspChnStatus->id,FY_TRUE);
+			if(s32Ret != FY_SUCCESS)
+			{	
+				printf("FY_MPI_VDEC_EnableUserPic fail for %#x!\n", s32Ret);
 			}
 
 			dec_buf_init(decEnv->dec25[rtspChnStatus->id].buf);
@@ -205,6 +194,16 @@ void pkgProcess(u_char *rtpPkg)
 
 		if(decEnv->dec25[pkg->cmd].err){//之前还有“无视频”标志
 
+			s32Ret = FY_MPI_VDEC_DisableUserPic((VDEC_CHN)pkg->cmd);
+			if(s32Ret != FY_SUCCESS)
+			{	
+				printf("FY_MPI_VDEC_DisableUserPic fail for %#x!\n", s32Ret);
+			}
+			s32Ret =FY_MPI_VDEC_ResetChn(pkg->cmd);
+			if(s32Ret != FY_SUCCESS)
+			{	
+				printf("FY_MPI_VDEC_SetUserPic fail for %#x!\n", s32Ret);
+			}
 			printf("%d :net connected \n",pkg->cmd);
 			decEnv->dec25[pkg->cmd].err = 0;
 
@@ -221,11 +220,9 @@ void pkgProcess(u_char *rtpPkg)
 			}
 		}
 		osalClearTaskEvent(1,0x00000001<<pkg->cmd);
-	//	if(pkg->cmd < layerMode)//防止通道越界 允许解码
 		if(pkg->cmd < u32WndNum)//TODO 这里要和 1 4 6 9 一致  防止通道越界 允许解码
 			//printf("%d %d\r\n",pkg->cmd,pkg->len);
 			process_rtp(pkg->data,pkg->len,pkg->cmd,&decEnv->dec25[pkg->cmd]);
-
 	}
 }
 

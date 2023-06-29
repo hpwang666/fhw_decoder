@@ -180,9 +180,9 @@ int main()
 	free_dec_chns(decEnv);
 	free(decEnv);
 
-    vdec_stop(VDEC_CHN_NUM_4);
-    vdec_vgs_unbind_vo_layer(VDEC_CHN_NUM_4,FY_VO_LAYER_VHD0,0);
-    vdec_vgs_deinit(VDEC_CHN_NUM_4);
+    vdec_stop(CHNS);
+    vdec_vgs_unbind_vo_layer(CHNS,FY_VO_LAYER_VHD0,0);
+    vdec_vgs_deinit(CHNS);
     vdec_vo_deinit_layer(VO_MODE_4MUX,FY_VO_LAYER_VHD0,0,VDEC_CHN_NUM_4);
 
     vo_deinit(FY_TRUE);
