@@ -28,7 +28,7 @@ int osal_printf(int task_id,int events)
 
 		printf("RecvFrames:%d , decdFrames:%d\n",pstStat.u32RecvStreamFrames,pstStat.u32DecodeStreamFrames);
 		printf("leftBytes:%d, LeftFrames:%d %d \n\n",pstStat.u32LeftStreamBytes,pstStat.u32LeftStreamFrames,pstStat.u32LeftPics);
-		osalStartTimerEx(task_id,OSAL_PRINT1,15000);
+		osalStartTimerEx(task_id,OSAL_PRINT1,90000);
 		do_event ^= OSAL_PRINT1;
 	}
 	return do_event;

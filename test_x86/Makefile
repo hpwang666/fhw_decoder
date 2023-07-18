@@ -1,33 +1,37 @@
-include ../Makefile.pub
+include ~/Makefile.pub
 
 INCLUDES=$(wildcard *.h)
 DEFS =
-CFLAGS := -Wall $(DEFS) -I.  -g 
-CFLAGS +=  -I./   -I../connet/ -I../connet/util
+CFLAGS := -Wall $(DEFS) -I.  -g
+CFLAGS +=  -I./    -Iconn/
 CXXFLAGS:=$(CFLAGS)
 CCFLAGS:=$(CFLAGS)
 LIBPATH := 
-LIBS := -lpthread ../connet/connet.a
-INSTALL_DIR=/home/work/nfs/nvr
+LIBS := -lpthread ./conn/conn.a
+INSTALL_DIR=
+
 
 
 ##### End of variables to change
 .PHONY :prepare all clean install
 
-TARGET = rtsp_bin
-ALL = $(TARGET)
-all: prepare $(ALL)
+
 
 SOURCES =  $(wildcard *.c) 
 
 #change .cpp files  to .o files
 OBJFILES = $(SOURCES:%.c=obj/%.o)
+TARGET = $(SOURCES:%.c=%_bin)
+ALL = $(TARGET)
+all: prepare $(ALL)
 
+.SECONDARY:
+	
 obj/%.o:%.c  $(INCLUDES)
 	$(COMPILE_CC)
 	
 	
-$(TARGET):	$(OBJFILES)  
+%_bin:obj/%.o
 	$(LINK_CC)
 prepare:
 	@echo "preparing..."

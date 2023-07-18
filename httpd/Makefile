@@ -3,18 +3,18 @@ include ../Makefile.pub
 INCLUDES=$(wildcard *.h)
 DEFS =
 CFLAGS := -Wall $(DEFS) -I.  -g 
-CFLAGS +=  -I./   -I../connet/ -I../connet/util
+CFLAGS +=  -I./   -I../connet/ -I../connet/util -I../sqlite3/output/include
 CXXFLAGS:=$(CFLAGS)
 CCFLAGS:=$(CFLAGS)
-LIBPATH := 
-LIBS := -lpthread ../connet/connet.a
+LIBPATH := -L../sqlite3/output/lib
+LIBS := -lsqlite3 -lpthread ../connet/connet.a
 INSTALL_DIR=/home/work/nfs/nvr
 
 
 ##### End of variables to change
 .PHONY :prepare all clean install
 
-TARGET = rtsp_bin
+TARGET = httpd_bin
 ALL = $(TARGET)
 all: prepare $(ALL)
 

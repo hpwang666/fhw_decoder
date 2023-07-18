@@ -34,11 +34,11 @@ int main()
 	uartSend(fd, "init serial", 11);  
 	while(!got_sig_term)
 	{
-		sleep(1);
+		//sleep(1);
 		len = serialRecv(fd,bufIn)  ; 
 		if(len){
 			bufIn[len]=0;
-			printf("%s\r\n",bufIn);
+			//printf("%s\r\n",bufIn);
 		}
 	}
 	

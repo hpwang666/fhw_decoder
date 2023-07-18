@@ -1,0 +1,146 @@
+<html>
+<head>
+<title>Configuration of embedded message server</title>
+<meta http-equiv='Content-Type' content='text/html; charset=GB2312'/>
+<script>
+function $(id) { return document.getElementById(id); };
+function settingsCallback(o) {
+if ($('txtVer')) $('txtVer').value = o.ver;
+if ($('txtMac')) $('txtMac').value = o.mac;
+if ($('txtIp'))  $('txtIp').value  = o.ip;
+if ($('txtSub')) $('txtSub').value = o.sub;
+if ($('txtGw'))  $('txtGw').value  = o.gw;
+};
+function postConfigCallback(o) {
+if ($('txtDcIp')) $('txtDcIp').value = o.dcip;
+if ($('txtDcPort')) $('txtDcPort').value = o.port;
+if ($('txtDcUsr')) $('txtDcUsr').value = o.dcusr;
+if ($('txtDcPas')) $('txtDcPas').value = o.dcpas;
+$('in1'+o.sw1).checked=true;
+$('in2'+o.sw2).checked=true;
+$('in3'+o.sw3).checked=true;
+$('in4'+o.sw4).checked=true;
+for(var i=1;i<=16;i++){
+		if ($('txtstream'+i))  $('txtstream'+i).value = o['stream'+i];}
+};
+function btnPutCallback(o) {
+alert("I am an alert box!!"+o)
+};
+function disableTest(){
+$('btn1').setAttribute('disabled', true);
+$('btn2').setAttribute('disabled', true);
+$('btn3').setAttribute('disabled', true);
+$('btn4').setAttribute('disabled', true);
+$('save').removeAttribute("disabled");
+}
+</script>
+</head>
+<body>
+<div id='main'>
+<div style='background:snow; display:block;padding:10px 20px;'>
+<h3>Configuration parameter</h3>
+<div class='row'>
+<div class='column'>
+<form id='frmSetting' method='POST' action='config.cgi'>
+<p><label for='txtIp'>Firmware number:</label><input type='text' id='txtVer' name='ver' size='16' disabled='disabled' /></p>
+<p><label for='txtIp'>MAC address:</label><input type='text' id='txtMac' name='mac' size='16' disabled='disabled' /></p>
+<p><label for='txtIp'>IP address:</label><input type='text' id='txtIp' name='ip' size='16' disabled='disabled'/></p>
+<p><label for='txtSub'>Subnet mask:</label><input type='text' id='txtSub' name='sub' size='16' disabled='disabled'/></p>
+<p><label for='txtGw'>Default gateway:</label><input type='text' id='txtGw' name='gw' size='16' disabled='disabled'/></p>
+<p><input type='submit'class='button' value='Refresh the page and reboot' /></p>
+</form>
+<p><input type='password'class='passw' id='access' name='access'size='10'value=''/><input type='button'  value='Enter password to start configuration' onClick=\"login()\"/></p>
+<p></p>
+<p><input type='button'class='button' id='btn1' value='Test input 1' onClick=\"ajx(1)\"/><input type='button'class='button' id='btn2' value='Test input 2' onClick=\"ajx(2)\"/><input type='button'class='button' id='btn3' value='Test input 3' onClick=\"ajx(3)\"/><input type='button'class='button' id='btn4' value='Test input 4' onClick=\"ajx(4)\"/></p>
+<form id='frmPostCfg' method='POST' action='postset.cgi' disabled='disabled'>
+<p><label >Decoder IP address:</label><input type='text' id='txtDcIp' name='dcip' size='16' /></p>
+<p><label >Port:</label><input type='text' id='txtDcPort' name='dcport' size='16' oninput = \"value=value.replace(/[^\\d]/g,'')\"/></p>
+<p><label >Decoder Username:</label><input type='text' id='txtDcUsr' name='dcusr' size='16' /></p>
+<p><label >Decoder Password:</label><input type='password' id='txtDcPas' name='dcpas' size='16' /></p>
+<p><input type='button'class='button' id='btn100' value='Get remote response' onClick=\"ajxview()\"/></p>
+</div>
+<div class='column'>
+<p>Right：<input type='radio' id='in10' name='insw1' value='0'/>Disable <input type='radio' id='in11' name='insw1' value='1'>One scene <input type='radio' id='in12' name='insw1' value='2'/>Four scenes</p>
+<p><label >Video streaming 1:</label><input type='text' id='txtstream1' name='stream1'size='16' /></p>
+<p><label >Video streaming 2:</label><input type='text' id='txtstream2' name='stream2'size='16' /></p>
+<p><label >Video streaming 3:</label><input type='text' id='txtstream3' name='stream3'size='16' /></p>
+<p><label >Video streaming 4:</label><input type='text' id='txtstream4' name='stream4'size='16' /></p>
+<p>Left：<input type='radio' id='in20' name='insw2' value='0'/>Disable <input type='radio' id='in21' name='insw2' value='1'/>One scene <input type='radio' id='in22' name='insw2' value='2'/>Four scenes</p>
+<p><label >Video streaming 1:</label><input type='text' id='txtstream5' name='stream5'size='16' /></p>
+<p><label >Video streaming 2:</label><input type='text' id='txtstream6' name='stream6'size='16' /></p>
+<p><label >Video streaming 3:</label><input type='text' id='txtstream7' name='stream7'size='16' /></p>
+<p><label >Video streaming 4:</label><input type='text' id='txtstream8' name='stream8'size='16' /></p>
+<p>Stop：<input type='radio' id='in30' name='insw3' value='0'/>Disable <input type='radio' id='in31' name='insw3' value='1'/>One scene <input type='radio' id='in32' name='insw3' value='2'/>Four scenes</p>
+<p><label >Video streaming 1:</label><input type='text' id='txtstream9' name='stream9'size='16' /></p>
+<p><label >Video streaming 2:</label><input type='text' id='txtstream10' name='stream10'size='16' /></p>
+<p><label >Video streaming 3:</label><input type='text' id='txtstream11' name='stream11'size='16' /></p>
+<p><label >Video streaming 4:</label><input type='text' id='txtstream12' name='stream12'size='16' /></p>
+<p>Input4：<input type='radio' id='in40' name='insw4' value='0'/>Disable <input type='radio' id='in41' name='insw4' value='1'/>One scene <input type='radio' id='in42' name='insw4' value='2'/>Four scenes</p>
+<p><label >Video streaming 1:</label><input type='text' id='txtstream13' name='stream13'size='16' /></p>
+<p><label >Video streaming 2:</label><input type='text' id='txtstream14' name='stream14'size='16' /></p>
+<p><label >Video streaming 3:</label><input type='text' id='txtstream15' name='stream15'size='16' /></p>
+<p><label >Video streaming 4:</label><input type='text' id='txtstream16' name='stream16'size='16' /></p>
+<p><input type='submit'class='button'id='save' value='Save settings and reboot' disabled='disabled'/></p>
+</form>
+</div>
+</div>
+</div>
+</div>
+<div style='margin:5px 5px;'>
+&copy;Copyright 2021 by FHJT
+</div>
+<script type='text/javascript' src='w5500.js'></script>
+<script type='text/javascript' src='post_config.js'></script>
+<script>
+function httpPost(URL, PARAMS) {
+var temp = document.createElement(\"form\");
+temp.action = URL;
+temp.method =\"pos\";
+temp.style.display = "non\";
+for (var x in PARAMS) {
+var opt = document.createElement(\"textarea\");
+opt.name = x;
+opt.value = PARAMS[x];
+temp.appendChild(opt);}
+document.body.appendChild(temp);
+temp.submit();
+return temp;}
+function dopost(groupName,riskLevel){
+var params = {
+groupName": groupName,
+riskLevel": riskLevel,};
+httpPost("/test.cgi", params);}
+function ajx(o){
+var xmlhttp=new XMLHttpRequest();
+xmlhttp.onreadystatechange=function()
+{if (xmlhttp.readyState==4 && xmlhttp.status==200){
+var msg = xmlhttp.responseText;
+alert\"Send Result : "+msg);}};
+xmlhttp.open("POST","/test.cgi",true);
+xmlhttp.send("input="+o);
+}
+function ajxview(){
+var xmlhttp=new XMLHttpRequest();
+xmlhttp.onreadystatechange=function()
+{if (xmlhttp.readyState==4 && xmlhttp.status==200){
+var msg = xmlhttp.responseText;
+alert("Send Result : "+msg);}};
+xmlhttp.open("POST","/roomview.cgi",true);
+xmlhttp.send("input");
+}
+function login(){
+var access =$('access').value;
+var xmlhttp=new XMLHttpRequest();
+xmlhttp.onreadystatechange=function()
+{if (xmlhttp.readyState==4 && xmlhttp.status==200){
+var msg = xmlhttp.responseText;
+if(msg==0){disableTest();
+}else{alert("password error");}
+}};
+xmlhttp.open("POST","/login.cgi",true);
+xmlhttp.send("input="+access);
+}
+</script>
+</body>
+</html>
+

@@ -30,7 +30,7 @@ int initSerial(void)
     //串口主要设置结构体termios <termios.h>  
     struct termios options;  
     tcgetattr(serial_fd, &options);  
- 
+	//fcntl(serial_fd, F_SETFL, flags | O_BLOCK);
 #if 1
     options.c_cflag |= (CLOCAL | CREAD);//设置控制模式状态，本地连接，接收使能  
     options.c_cflag &= ~CSIZE;//字符长度，设置数据位之前一定要屏掉这个位  
@@ -69,19 +69,24 @@ int uartSend(int serial_fd, char *data, int datalen)
 int serialRecv(int serial_fd,char *data)  
 {  
     int len=0;  
+	char crc=0;
 	struct timeval timeout;
 	 
     fd_set fs_read;  
     FD_ZERO(&fs_read);  
     FD_SET(serial_fd, &fs_read);  
     timeout.tv_sec = 2; 
+	timeout.tv_usec = 0;//这个不能省哦
 	
 	select(serial_fd+1, &fs_read, NULL, NULL, &timeout);  
 	if (FD_ISSET(serial_fd, &fs_read)) 
 	{  
 		ioctl(serial_fd,FIONREAD,&len);
-		len = read(serial_fd, data, 512);
+		if(len != 4) return -1;
+		len = read(serial_fd, data, 4);
 		debug("len[%d]:%02x %02x %02x %02x\n\r",len,data[0],data[1],data[2],data[3]);
+		crc=data[0]^data[1];
+		crc=~(crc^data[2]);
 		return len;
 	}
 	return 0;

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<TITLE>Index</TITLE>
+<meta http-equiv='Content-Type' content='text/html; charset=GB2312'/>
+<head>
+<script>
+
+function $(id) { return document.getElementById(id); };
+function postConfigCallback(o) {
+		for(var i=1;i<=16;i++){
+				if ($('txtstream'+i))  $('txtstream'+i).value = o['stream'+i];}
+};
+</script>
+
+
+</head>
+<BODY>
+<P>Welcome to FHJT webserver.
+</br>
+</br>
+<p><input type='password' class='passw' id='access' name='access'size='10'value=''/><button onClick="login()">login</button></p>
+<FORM ACTION="geshihua.cgi" METHOD="POST">
+<p><label >ch 1:</label><input type='text' id='txtstream1' name='stream1'size='16' /><label >ch 9:</label><input type='text' id='txtstream9' name='stream9'size='16' /></p>
+<p><label >ch 2:</label><input type='text' id='txtstream2' name='stream2'size='16' /><label >ch 10:</label><input type='text' id='txtstream10' name='stream10'size='16' /></p>
+<p><label >ch 3:</label><input type='text' id='txtstream3' name='stream3'size='16' /><label >ch 11:</label><input type='text' id='txtstream11' name='stream11'size='16' /></p>
+<p><label >ch 4:</label><input type='text' id='txtstream4' name='stream4'size='16' /><label >ch 12:</label><input type='text' id='txtstream12' name='stream12'size='16' /></p>
+<p><label >ch 5:</label><input type='text' id='txtstream5' name='stream5'size='16' /><label >ch 13:</label><input type='text' id='txtstream13' name='stream13'size='16' /></p>
+<p><label >ch 6:</label><input type='text' id='txtstream6' name='stream6'size='16' /><label >ch 14:</label><input type='text' id='txtstream14' name='stream14'size='16' /></p>
+<p><label >ch 7:</label><input type='text' id='txtstream7' name='stream7'size='16' /><label >ch 15:</label><input type='text' id='txtstream15' name='stream15'size='16' /></p>
+<p><label >ch 8:</label><input type='text' id='txtstream8' name='stream8'size='16' /><label >ch 16:</label><input type='text' id='txtstream16' name='stream16'size='16' /></p>
+<p><label >LEFT</label><input type='text' id='txtleft' name='left'size='16' /></p>
+<p><label >RIGHT</label><input type='text' id='txtright' name='right'size='16' /></p>
+<p><label >STOP</label><input type='text' id='txtstop' name='stop'size='16' /></p>
+
+
+<INPUT TYPE="submit">
+</FORM>
+<form id='frmFileUp' method='POST' action='fileup.cgi' enctype='multipart/form-data'>
+<p><label >Firmware update</label></p>
+<p><input type='file' id='file' name='file' /></p>
+<p><input type='submit' id='upbtn' value='Upload' disabled='disabled' /></p>
+<p>Do not use any unauthorized firmware upgrade. Do not shutdown the power during the upgrade</p>
+</form>
+<script type="text/javascript" src="post_config.js"></script>
+<script>
+function login(){
+	var access =$('access').value;
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.onreadystatechange=function()
+	{if (xmlhttp.readyState==4 && xmlhttp.status==200){
+		var msg = xmlhttp.responseText;
+		if(msg!=0)
+		{alert("password error");}
+		}else{
+				$("upbtn").removeAttribute('disabled');
+			}};
+		xmlhttp.open("POST","/login.cgi",true);
+		xmlhttp.send("input="+access);
+}
+
+</script>
+<style type='text/css'>
+body {text-align:left; background-color:#c0deed;font-family:Verdana;}
+#main {margin-right:auto;margin-left:auto;margin-top:30px;}
+label{display:inline-block;width:180px;}
+#main h3{color:#66b3ff; text-decoration:underline;}
+.column {float:left;margin-right:50px;width: 40%;}
+@media screen and (max-width: 800px) {.column {width: 100%;}}
+.button {width:190px;height:40px;margin:0 50px 15px 0}
+.passw {margin-right:20px;}
+</style>
+</BODY>
+</HTML>
