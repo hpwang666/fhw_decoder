@@ -24,6 +24,7 @@ typedef struct _camConnection *camConnection;
 
 struct _loop_ev
 {
+	char plcCams[3][32];
 	camConnection camConn;
 	queue_t ptzQueue;
 	queue_t voQueue;

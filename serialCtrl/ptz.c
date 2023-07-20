@@ -16,15 +16,14 @@
 #endif
 
 //ISAPI/PTZCtrl/channels/1/presets/1/goto
-int transCmd(loop_ev ev, custom_t cmdCmd)
+int transCmd(loop_ev env, custom_t cmdCmd)
 {
 	int channel = cmdCmd->ch;
-	camConnection camConn = &(ev->camConn[channel]);
+	camConnection camConn = &(env->camConn[channel]);
 	int len = 0;
 	int cam0407 = 0;
 	static char h_con[1024];
 	static char cmd_xml[256];
-	static int exposureturn;
 	const char *_camName0 = "DS-2ZMN0407(C)";
 	const char *_camName1 = "DS-2ZMN0407(D)";
 	len = strlen(camConn->address);
@@ -45,8 +44,11 @@ int transCmd(loop_ev ev, custom_t cmdCmd)
 			cam0407 = 0;
 		if (cmdCmd->cmd == 0xaa)
 		{ //union ctrl
-			snprintf(h_con, 1024, "/ISAPI/PTZCtrl/channels/1/presets/%d/goto", cmdCmd->stop);
-			httpClientPut(camConn->ct, h_con, NULL);
+			printf("union ctrl \r\n");
+			snprintf(h_con, 1024, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\
+					<PTZData><AbsoluteHigh><elevation> 0 </elevation><azimuth>0</azimuth> \
+					<absoluteZoom>%d</absoluteZoom></AbsoluteHigh></PTZData>",cmdCmd->stop);
+			httpClientPut(camConn->ct,"/ISAPI/PTZCtrl/channels/1/absolute" , h_con);
 			httpClearConn(camConn->ct);
 			return 0;
 		}
@@ -56,10 +58,10 @@ int transCmd(loop_ev ev, custom_t cmdCmd)
 		{
 		case 0x90:
 			snprintf(cmd_xml, 128, "<PTZAux><id>1</id><type>WIPER</type><status>on</status></PTZAux>");
-			break; //WIPER
+			break; //WIPER ON
 		case 0x91:
 			snprintf(cmd_xml, 128, "<PTZAux><id>1</id><type>WIPER</type><status>off</status></PTZAux>");
-			break; //WIPER
+			break; //WIPER OFF
 		case 0x80:
 			if (cam0407)
 				snprintf(cmd_xml, 128, "<PTZData><pan>0</pan><tilt>0</tilt><zoom>0</zoom></PTZData>");
@@ -73,10 +75,10 @@ int transCmd(loop_ev ev, custom_t cmdCmd)
 				snprintf(cmd_xml, 128, "<PTZData><pan>0</pan><tilt>0</tilt><zoom>-100</zoom></PTZData>");
 			break; //ZOOM_OUT
 		case 0x8C:
-			snprintf(cmd_xml, 128, "<PTZData><pan>0</pan><tilt>80</tilt><zoom>0</zoom></PTZData>");
+			snprintf(cmd_xml, 128, "<PTZData><pan>0</pan><tilt>-80</tilt><zoom>0</zoom></PTZData>");
 			break; //TILT_UP
 		case 0x8D:
-			snprintf(cmd_xml, 128, "<PTZData><pan>0</pan><tilt>-80</tilt><zoom>0</zoom></PTZData>");
+			snprintf(cmd_xml, 128, "<PTZData><pan>0</pan><tilt>80</tilt><zoom>0</zoom></PTZData>");
 			break; //TILT_DOWN
 		case 0x8E:
 			snprintf(cmd_xml, 128, "<PTZData><pan>-80</pan><tilt>0</tilt><zoom>0</zoom></PTZData>");

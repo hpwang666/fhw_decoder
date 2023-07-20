@@ -10,9 +10,9 @@
 #include "media.h"
 #include "env.h"
 
-extern loop_ev ev;
+extern loop_ev env;
 		
-int server_read_handle(event_t ev)
+int rtsp_read_handle(event_t ev)
 {
 	int r;
 	
@@ -46,7 +46,7 @@ int server_read_handle(event_t ev)
 	return 0;
 }
 
-int server_write_handle(event_t ev)
+int rtsp_write_handle(event_t ev)
 {
 	int n;
 	conn_t c =(conn_t) ev->data;
@@ -55,13 +55,6 @@ int server_write_handle(event_t ev)
 	return 0;
 }
 
-int init_udp_conn(conn_t c,void *arg)
-{
-	c->read->handler = server_read_handle;
-	c->write->handler = server_write_handle;
-	c->data = arg;//lc->ls_arg
-	return 0;
-}
 
 
 int rtsp_connect_handler(event_t ev)
@@ -93,8 +86,8 @@ int rtsp_connect_handler(event_t ev)
 	
 	c->write->ready = 1;//可写
 	add_event(c->read,READ_EVENT);
-	c->read->handler =server_read_handle;
-	c->write->handler = server_write_handle;
+	c->read->handler =rtsp_read_handle;
+	c->write->handler = rtsp_write_handle;
 	
 	return 0;
 }
@@ -161,7 +154,7 @@ int transVo(conn_t c, custom_t customCmd)
 		netCfg.chn=i;
 		netCfg.subwin=voMutx;
 
-		sprintf(netCfg.mediaInfo.camAddress,"%s",ev->camConn[i+sqlite3Chn].address);
+		sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
 		if(voMutx==1 || voMutx ==4)
 			sprintf(netCfg.mediaInfo.camUrl,"/h264/ch1/main/av_stream");
 		else

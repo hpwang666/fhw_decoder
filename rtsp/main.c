@@ -163,7 +163,7 @@ int main()
 	init_epoll();
 	list = create_pool_list();
 
-	unixBuf=buf_new(512*1024);
+	unixBuf=buf_new(1024*1024);
 	init_media();
 	lc = create_listening(10000);
 	lc->ls_handler = init_accepted_conn;

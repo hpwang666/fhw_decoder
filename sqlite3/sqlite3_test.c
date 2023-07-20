@@ -45,7 +45,31 @@ int main()
 	}
 
 #endif
+#if 0
+	result = sqlite3_exec( db, "create table plc_ctrl( ID integer primary key autoincrement, cmd varchar(32),vo_mutx int,cameras varchar(64) )", NULL, NULL, &errmsg );
 
+	if(result != SQLITE_OK )
+
+	{
+		printf( "创建表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+
+	for(i=0;i<4;i++){
+		
+		//插入一些记录
+		result = sqlite3_exec( db, "insert into plc_ctrl(cmd,vo_mutx,cameras) values ('LEFT',4,'1,2,3,4')", NULL, 0, &errmsg );
+		if(result != SQLITE_OK )
+
+		{
+			printf( "插入记录失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+
+		}
+	}
+
+#endif
+
+
+#if 0
 	result = sqlite3_exec( db, "update camera set url='/chn/1/h264/sub' where id = 2", callback, NULL, &errmsg );
 	if(result != SQLITE_OK )
 
@@ -53,7 +77,6 @@ int main()
 		printf( "更新失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
 
 	}
-#if 0
 	result = sqlite3_exec( db, "select * from camera", callback, NULL, &errmsg );
 	if(result != SQLITE_OK )
 
@@ -62,18 +85,18 @@ int main()
 
 	}
 #endif
-	sprintf(sql,"select * from camera");
+	sprintf(sql,"select * from plc_ctrl");
 	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
 	if(result != SQLITE_OK )
 	{
 		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 	while (SQLITE_ROW == sqlite3_step(stmt)) {
-		printf("id:%d address: %s, ip:%s,  type: %d\n",\
+		printf("id:%d cmd: %s,vo:%d , cameras:%s  \n",\
 				sqlite3_column_int(stmt, 0),\
 				sqlite3_column_text(stmt, 1),\
-				sqlite3_column_text(stmt, 2),\
-				sqlite3_column_int(stmt, 3));
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_text(stmt, 3));\
 	}
 	sqlite3_finalize(stmt);
 	sqlite3_close( db );

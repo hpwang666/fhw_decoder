@@ -9,6 +9,9 @@ function $(id) { return document.getElementById(id); };
 function postConfigCallback(o) {
 		for(var i=1;i<=16;i++){
 				if ($('txtstream'+i))  $('txtstream'+i).value = o['stream'+i];}
+		if ($('txtleft'))  $('txtleft').value = o['left'];
+		if ($('txtright'))  $('txtright').value = o['right'];
+		if ($('txtstop'))  $('txtstop').value = o['stop'];
 };
 </script>
 

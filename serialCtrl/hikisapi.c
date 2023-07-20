@@ -63,6 +63,25 @@ int getChnnelInfo(loop_ev ev)
 		}
 	}
 	sqlite3_finalize(stmt);
+
+
+	sprintf(sql,"select * from plc_ctrl");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d cmd: %s,vo:%d , cameras:%s  \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_text(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_text(stmt, 3));\
+		sprintf(ev->plcCams[sqlite3_column_int(stmt, 0)-1],"%s",sqlite3_column_text(stmt, 3));
+	}
+	sqlite3_finalize(stmt);
+
+
 	sqlite3_close( db );
 	return 0;
 }

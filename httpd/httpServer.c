@@ -54,6 +54,7 @@ void make_basic_config_setting_json_callback(char* buf, char* config_msg)
 void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 {
 	char address[16][32];
+	char plcCtrl[3][32];
 
 	sqlite3 * db = NULL; //声明sqlite关键结构指针
 	int result;
@@ -85,6 +86,24 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 		sprintf(address[sqlite3_column_int(stmt, 0)-1],"%s",sqlite3_column_text(stmt, 1));
 	}
 	sqlite3_finalize(stmt);
+
+	sprintf(sql,"select * from plc_ctrl");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d cmd: %s,vo:%d , cameras:%s  \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_text(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_text(stmt, 3));\
+		sprintf(plcCtrl[sqlite3_column_int(stmt, 0)-1],"%s",sqlite3_column_text(stmt, 3));
+	}
+	sqlite3_finalize(stmt);
+
+
 	sqlite3_close( db );
   sprintf(buf,"postConfigCallback({\
 				\"stream1\":\"%s\",\
@@ -103,11 +122,15 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"stream14\":\"%s\",\
 				\"stream15\":\"%s\",\
 				\"stream16\":\"%s\",\
+				\"left\":\"%s\",\
+				\"right\":\"%s\",\
+				\"stop\":\"%s\",\
                 });",\
 				address[0],address[1],address[2],address[3],\
 				address[4],address[5],address[6],address[7],\
 				address[8],address[9],address[10],address[11],\
-				address[12],address[13],address[14],address[15]
+				address[12],address[13],address[14],address[15],\
+				plcCtrl[0],plcCtrl[1],plcCtrl[2]
          );
 		
 }
@@ -239,12 +262,48 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 				printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
 			}
 		}
+		
+	}
+
+
+	sprintf(stream,"left");
+	if(verify_plc_ctrl(param)){
+
+		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+		sprintf(sql,"update plc_ctrl set cameras= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+	sprintf(stream,"right");
+	if(verify_plc_ctrl(param)){
+		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+		sprintf(sql,"update plc_ctrl set cameras= \"%s\" where id = 2",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+
+
+	sprintf(stream,"stop");
+	if(verify_plc_ctrl(param)){
+		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+		sprintf(sql,"update plc_ctrl set cameras= \"%s\" where id = 3",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
 	}
 	sqlite3_close( db );
-	return 0;
+	return 1;
 	//else
 	//	return 1;
-	
+
 }
 
 void cgi_fileup_reboot(void)

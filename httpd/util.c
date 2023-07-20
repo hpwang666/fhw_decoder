@@ -262,6 +262,33 @@ int verify_ip_address(char* src )
 	return 1;	
 }
 
+
+
+int verify_plc_ctrl(char* src )
+{
+	int j,i;
+	int tnum;
+	char tsrc[50];
+	char* tok = tsrc;
+	
+	strcpy(tsrc,src);
+	
+	for(i = 0; i < 4; i++)
+	{
+		tok = strtok(tok,",");
+		if ( !tok ) return 0;
+		j=strlen(tok);
+		if(j>3) return 0;
+		for(j=0;j<strlen(tok);j++){
+			if(tok[j]>0x39||tok[j]<0x30)
+				return 0;
+		}
+		if(atoi(tok)>16) return 0;
+		tok = NULL;
+	}
+	return 1;	
+}
+
 #if 0
 /**
 *@brief	 	将32地址转化为十进制格式

@@ -1,0 +1,5 @@
+address:172.16.10.10
+gateway:0.0.0.0
+netmask:0.0.0.0
+hostname:0.0.0.0
+id:1q2w3e4r5t6y
