@@ -35,6 +35,9 @@ int transCmd(loop_ev env, custom_t cmdCmd)
 		if (0 == getCamName(camConn))
 			return 0;
 	}
+	if(strncmp(camConn->address,"0.0.0.0",7)==0){
+		return 0;
+	}
 
 	if ((0 == strncmp(camConn->camName, "DS-", 3))||(0 == strncmp(camConn->camName, "iDS", 3)))
 	{

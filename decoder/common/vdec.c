@@ -35,7 +35,7 @@ static VDEC_CHN_ATTR_S stVdecChnAttr[CHNS];
     }
     for(i = 4 ; i < s32ChnNum; i++) {
     	astSize[i].u32Width	= 640;
-	    astSize[i].u32Height = 360;
+	    astSize[i].u32Height = 480;
     }
 
 	FY_MPI_VDEC_GetModParam(&mod_parm);

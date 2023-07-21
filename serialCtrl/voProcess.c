@@ -146,6 +146,7 @@ int transVo(conn_t c, custom_t customCmd)
 	int voMutx = (customCmd->cmd&0xff)>>4;
 	int chn = customCmd->ch;
 
+	if(voMutx == 15) voMutx =16;
 	int sqlite3Chn = voMutx*chn;
 	printf("%02x:%d:%d\r\n",customCmd->cmd,voMutx,sqlite3Chn);
 	for(i=0;i<voMutx;i++){
@@ -154,7 +155,10 @@ int transVo(conn_t c, custom_t customCmd)
 		netCfg.chn=i;
 		netCfg.subwin=voMutx;
 
-		sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
+		if(strncmp(env->camConn[i+sqlite3Chn].address,"0.0.0.0",7)==0)
+			netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
+		else
+			sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
 		if(voMutx==1 || voMutx ==4)
 			sprintf(netCfg.mediaInfo.camUrl,"/h264/ch1/main/av_stream");
 		else
@@ -165,6 +169,7 @@ int transVo(conn_t c, custom_t customCmd)
 
 		printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);
 		//memset(netCfg.mediaInfo.camAddress,0,32);
+
 		c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));
 	}
 	return 0;

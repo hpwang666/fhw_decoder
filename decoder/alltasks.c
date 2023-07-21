@@ -7,7 +7,7 @@
 #include "alltasks.h"
 #include "osal.h"
 #include "decoder.h"
-
+#include "vo.h"
 
 
 int osal_printf(int task_id,int events)
@@ -28,7 +28,7 @@ int osal_printf(int task_id,int events)
 
 		printf("RecvFrames:%d , decdFrames:%d\n",pstStat.u32RecvStreamFrames,pstStat.u32DecodeStreamFrames);
 		printf("leftBytes:%d, LeftFrames:%d %d \n\n",pstStat.u32LeftStreamBytes,pstStat.u32LeftStreamFrames,pstStat.u32LeftPics);
-		osalStartTimerEx(task_id,OSAL_PRINT1,90000);
+		osalStartTimerEx(task_id,OSAL_PRINT1,150000);
 		do_event ^= OSAL_PRINT1;
 	}
 	return do_event;
@@ -43,12 +43,18 @@ int dec_reset_handler(int task_id,int events)
 	
 	for(i=0;i<16;i++){
 		if(events & (0x00000001<<i)){
-#if 0
-			ret = HI_MPI_VO_ClearChnBuffer(VO_LAYER_VHD0, i, HI_TRUE);
-			if (HI_SUCCESS != ret)
+#if 1
+			//清除屏幕上的缓存数据
+			ret= FY_MPI_VO_ClearChnBuffer(FY_VO_LAYER_VHD0 , i,FY_TRUE);
+			if (FY_SUCCESS != ret)
 			{
 				printf("pause vo chn failed! \n");
 			}
+			else{
+				printf("clear chn %d \r\n",i);
+			}
+			FY_MPI_VO_FillChn(0,i,0x0);
+			FY_MPI_VO_RefreshChn(FY_VO_LAYER_VHD0 , i);
 #endif
 			//osalStartTimerEx(task_id,(0x00000001<<i),500);
 			do_event ^=(0x00000001<<i);

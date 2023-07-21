@@ -146,6 +146,7 @@ loop_ev init (void)
 {
 	int i =0;
 	loop_ev env;
+	struct custom_st custom;
 	env = (loop_ev)calloc(1,sizeof(struct _loop_ev));
 	env->camConn = (camConnection)calloc(16,sizeof(struct _camConnection));
 	for(i=0;i<16;i++)
@@ -162,6 +163,10 @@ loop_ev init (void)
 	env->ptzQueue=queue_new(16,sizeof(struct custom_st ));
 	env->voQueue=queue_new(16,sizeof(struct custom_st ));
 	
+	custom.ch = 0;
+	custom.cmd = 0x1a;
+	custom.stop = 0;//在这里没有用
+	queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 	pthread_create(&env->uart_worker, NULL, _mainLoop, env);
 	pthread_create(&env->vo_worker, NULL, _voLoop, env);
 	pthread_create(&env->http_worker, NULL, _httpLoop, env);

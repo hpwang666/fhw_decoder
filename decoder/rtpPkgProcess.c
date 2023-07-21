@@ -13,6 +13,7 @@
 #include "vdec.h"
 #include "osal.h"
 #include "stream.h"
+#include "fy_comm_vo.h"
 
 		
 //当是rtp数据包时 就是传的数据否则就是状态
@@ -59,16 +60,18 @@ void pkgProcess(u_char *rtpPkg)
 					printf("FY_MPI_VDEC_ResetChn fail for %#x!\n", s32Ret);
 				}
 
-#if 0
+#if 1
 				//清除屏幕上的缓存数据
-				s32Ret = HI_MPI_VO_ClearChnBuffer(VO_LAYER_VHD0, rtspChnStatus->id, HI_TRUE);
-				if (HI_SUCCESS != s32Ret)
+				s32Ret = FY_MPI_VO_ClearChnBuffer(FY_VO_LAYER_VHD0 , rtspChnStatus->id,FY_TRUE);
+				if (FY_SUCCESS != s32Ret)
 				{
 					printf("pause vo chn failed! \n");
 				}
 
 				osalStartTimerEx(1,(0x00000001<<rtspChnStatus->id),300);//所有通道都加入定时清屏序列
+				//FY_MPI_VO_FillChn(0,rtspChnStatus->id,0x0);
 #endif
+				
 			}
 		}
 		else{//因为分屏原因，这里只会处理 0  通道
@@ -102,12 +105,12 @@ void pkgProcess(u_char *rtpPkg)
 				decEnv->dec25[i].waitIfream = 0;
 				decEnv->dec25[i].startRcv= 0;
 
-#if 0
-				s32Ret = FY_MPI_VO_(FY_VO_LAYER_VHD0, i, FY_TRUE);
+#if 1
+				//清除屏幕上的缓存数据
+				s32Ret = FY_MPI_VO_ClearChnBuffer(FY_VO_LAYER_VHD0 , i,FY_TRUE);
 				if (FY_SUCCESS != s32Ret)
 				{
 					printf("pause vo chn failed! \n");
-
 				}
 				osalClearTaskEvent(1,0x00000001<<i);
 #endif

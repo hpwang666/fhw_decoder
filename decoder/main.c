@@ -153,7 +153,7 @@ int main()
 	osalInitEnv();
 	pthread_create(&osal_worker, NULL, _osalLoop, NULL);
 	osalAddTask(osal_printf,OSALSTART);
-	osalAddTask(dec_reset_handler,OSALSTOP);
+	osalAddTask(dec_reset_handler,OSALSTART);
 	osalAddTask(check_left_freams,OSALSTART);
 	
 			
