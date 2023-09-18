@@ -81,6 +81,22 @@ int getChnnelInfo(loop_ev ev)
 	}
 	sqlite3_finalize(stmt);
 
+	sprintf(sql,"select * from controller where id = 1");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d h_type: %d,muxt4:%d \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_int(stmt, 2));\
+
+			ev->muxt4=sqlite3_column_int(stmt, 2);
+		ev->decType=sqlite3_column_int(stmt, 1);
+	}
+	sqlite3_finalize(stmt);
 
 	sqlite3_close( db );
 	return 0;

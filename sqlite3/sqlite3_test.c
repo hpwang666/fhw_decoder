@@ -24,6 +24,26 @@ int main()
 		return -1;
 	}
 #if 0
+	result = sqlite3_exec( db, "create table controller( ID integer primary key autoincrement, h_type int,muxt4_type int)", NULL, NULL, &errmsg );
+
+	if(result != SQLITE_OK )
+
+	{
+		printf( "创建表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+
+
+	//插入一些记录
+	result = sqlite3_exec( db, "insert into controller(h_type,muxt4_type) values (0,0)", NULL, 0, &errmsg );
+	if(result != SQLITE_OK )
+
+	{
+		printf( "插入记录失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+
+		}
+
+#endif
+#if 0
 	result = sqlite3_exec( db, "create table camera( ID integer primary key autoincrement, address varchar(128), url varchar(128),h_type int)", NULL, NULL, &errmsg );
 
 	if(result != SQLITE_OK )
@@ -85,6 +105,7 @@ int main()
 
 	}
 #endif
+#if 0
 	sprintf(sql,"select * from plc_ctrl");
 	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
 	if(result != SQLITE_OK )
@@ -99,6 +120,8 @@ int main()
 				sqlite3_column_text(stmt, 3));\
 	}
 	sqlite3_finalize(stmt);
+#endif
+
 	sqlite3_close( db );
 
 	return 0;

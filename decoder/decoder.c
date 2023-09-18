@@ -24,7 +24,10 @@ decEnv_t create_dec_chns(void)
 
 	for(i=0;i<CHNS;i++)
 	{
-		decEnv->dec25[i].buf = dec_buf_new(2*1024*1024);
+		if(i<4)
+			decEnv->dec25[i].buf = dec_buf_new(4*1024*1024);
+		else
+			decEnv->dec25[i].buf = dec_buf_new(512*1024);
 		decEnv->dec25[i].PKG_STARTED = 0;
 
 		s32Ret =FY_MPI_VDEC_SetUserPic((VDEC_CHN)i,&VdecUserPic);

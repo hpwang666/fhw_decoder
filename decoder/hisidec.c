@@ -50,7 +50,7 @@ FY_VOID vdec_handle_sig(FY_S32 signo)
 
 
 
-FY_S32 decode_h264(int accessable)
+FY_S32 decode_h264(int dec_type)
 {
 	int i=0;
     FY_U32 u32BlkSize = 0;
@@ -61,6 +61,7 @@ FY_S32 decode_h264(int accessable)
     memset(&stVbConf, 0, sizeof(VB_CONF_S));
     stVbConf.u32MaxPoolCnt = 1;
 
+    //u32BlkSize = 2688*1520* 3/2;
     u32BlkSize = 1920 * 1440 * 3/2;
     stVbConf.astCommPool[0].u32BlkSize = u32BlkSize;
     stVbConf.astCommPool[0].u32BlkCnt = 4;
@@ -69,7 +70,14 @@ FY_S32 decode_h264(int accessable)
     vo_init(FY_TRUE, VO_OUTPUT_1080P60);
 
     for(i=0;i<CHNS;i++){
-        pt_types[i]=PT_H264;
+		if(dec_type==1){
+			printf("decoder configed for H265\r\n");
+			pt_types[i]=PT_H265;
+		}
+		else{
+			printf("decoder configed for H264\r\n");
+			pt_types[i]=PT_H264;
+		}
     }
     vdec_start_mux_voChn_ext(CHNS, VO_MODE_4MUX, HD_WIDTH,HD_HEIGHT,\
 		   					pt_types,3, 1,FY_VO_LAYER_VHD0,0);

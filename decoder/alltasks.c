@@ -80,7 +80,7 @@ int check_left_freams(int task_id,int events)
 			FY_MPI_VDEC_Query(i,&pstStat);
 			
 			if(0) printf("decdFrames:%d, LeftFrames:%d  \n\n",pstStat.u32DecodeStreamFrames,pstStat.u32LeftStreamFrames);
-			if(pstStat.u32LeftStreamFrames>30){
+			if(pstStat.u32LeftStreamFrames>50){
 				printf("chn: %d stop recving  for too much leftbytes !\n",i); 
 				if(decEnv->dec25[i].err){ 
 					break; 

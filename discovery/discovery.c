@@ -144,7 +144,8 @@ static volatile int g_need_restart_process = 0;
 static volatile time_t next_send = 0;
 static volatile int exiting = 0;
 
-static char dev_ctx[12];
+static char dev_ctx[32];
+static char dev_mac[32];
 
 static void do_multicast_send(int sock, const void *data, int len){
 	
@@ -169,11 +170,13 @@ static void do_modify_ip(modifyIP_t modifyIP)
 		fp = fopen(FILE_PATH,"w");
 		if(NULL == fp ) return ;
 		char str[] = "This is runoob.com";
-		sprintf(wBuf,"address:%s\n",modifyIP->ip);
+		sprintf(wBuf,"mac:%s\n",dev_mac);
+		sprintf(wBuf+strlen(wBuf),"address:%s\n",modifyIP->ip);
 		sprintf(wBuf+strlen(wBuf),"gateway:%s\n",modifyIP->gateway);
 		sprintf(wBuf+strlen(wBuf),"netmask:%s\n",modifyIP->mask);
 		sprintf(wBuf+strlen(wBuf),"hostname:%s\n",modifyIP->dns);
 		sprintf(wBuf+strlen(wBuf),"id:%s\n",dev_ctx);
+		printf("write:%s",wBuf);
 		 fwrite(wBuf, strlen(wBuf) , 1, fp );
 		//printf("%s",wBuf);
 		fclose(fp);
@@ -323,7 +326,14 @@ int getDevInfo( devReport_t dev)
 	tail = strstr(head,"\n");
 	if (NULL == tail ) return -1;
   	snprintf(dev->gateway,tail-head+1,"%s", head);
-	
+
+
+	head = strstr(readBuf,"mac:");
+	if (NULL == head ) return -1;
+	head+=4;
+	tail = strstr(head,"\n");
+	if (NULL == tail ) return -1;
+  	snprintf(dev_mac,tail-head+1,"%s", head);
 	fclose(fp);
 	return 1;
 }
@@ -348,7 +358,8 @@ int main(int argc, char* argv[]){
 	if (NULL == head ) return -1;
 	memcpy(dev_ctx,head+3,12);
 	fclose(fp);
-	
+	dev_ctx[12]=0;
+	printf("id:%s\r\n",dev_ctx);
     pthread_t  receiver;
     pthread_create(&receiver, NULL, _do_receive, (void*)(uintptr_t)s);
     

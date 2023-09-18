@@ -55,6 +55,8 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 {
 	char address[16][32];
 	char plcCtrl[3][32];
+	u_char muxt4=0;
+    u_char dec=0; 	
 
 	sqlite3 * db = NULL; //声明sqlite关键结构指针
 	int result;
@@ -104,6 +106,24 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 	sqlite3_finalize(stmt);
 
 
+	sprintf(sql,"select * from controller where id = 1");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d h_type: %d,muxt4:%d \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_int(stmt, 2));\
+
+			muxt4=sqlite3_column_int(stmt, 2);
+		dec=sqlite3_column_int(stmt, 1);
+	}
+	sqlite3_finalize(stmt);
+
+
 	sqlite3_close( db );
   sprintf(buf,"postConfigCallback({\
 				\"stream1\":\"%s\",\
@@ -125,12 +145,14 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"left\":\"%s\",\
 				\"right\":\"%s\",\
 				\"stop\":\"%s\",\
+				\"muxt4\":\"%d\",\
+				\"dec\":\"%d\",\
                 });",\
 				address[0],address[1],address[2],address[3],\
 				address[4],address[5],address[6],address[7],\
 				address[8],address[9],address[10],address[11],\
 				address[12],address[13],address[14],address[15],\
-				plcCtrl[0],plcCtrl[1],plcCtrl[2]
+				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec
          );
 		
 }
@@ -267,9 +289,8 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 
 
 	sprintf(stream,"left");
+	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
 	if(verify_plc_ctrl(param)){
-
-		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
 		sprintf(sql,"update plc_ctrl set cameras= \"%s\" where id = 1",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
@@ -277,9 +298,10 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
 		}
 	}
+	else printf("left formate error \r\n");
 	sprintf(stream,"right");
+	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
 	if(verify_plc_ctrl(param)){
-		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
 		sprintf(sql,"update plc_ctrl set cameras= \"%s\" where id = 2",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
@@ -287,11 +309,12 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
 		}
 	}
+	else printf("right formate error \r\n");
 
 
 	sprintf(stream,"stop");
+	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
 	if(verify_plc_ctrl(param)){
-		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
 		sprintf(sql,"update plc_ctrl set cameras= \"%s\" where id = 3",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
@@ -299,6 +322,27 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
 		}
 	}
+	else printf("stop formate error \r\n");
+
+
+	sprintf(stream,"muxt4");
+	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+	sprintf(sql,"update controller set muxt4_type= \"%s\" where id = 1",param);
+	ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+	if(ret!= SQLITE_OK )
+	{
+		printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+	}
+
+
+	sprintf(stream,"dec");
+	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+	sprintf(sql,"update controller set h_type= \"%s\" where id = 1",param);
+	ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+	if(ret!= SQLITE_OK )
+	{
+		printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
 	sqlite3_close( db );
 	return 1;
 	//else
@@ -398,7 +442,8 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 		}
 	}
 	printf("@@@FirmSize:%d\r\n",upload_file_len);	
-	while(recv_on&&leaveCounter<50000)
+	leaveCounter=0;
+	while(recv_on&&leaveCounter<500)
 	{
 		uint16_t temp_len=1024;
 		uint16_t tail_len;
@@ -451,7 +496,7 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 				memcpy(rcvBuf+rx_len,http_buf,temp_len);//取第一包中的正文
 			//	printf(">>%s\r\n",rcvBuf+rx_len);
 				rx_len+=temp_len;
-			//	printf("rx_len=%d\r\n",rx_len);//第二包长度,中间包				
+				printf("rx_len=%d\r\n",rx_len);//第二包长度,中间包				
 			}
 		}
 	}

@@ -10,8 +10,9 @@
 #include "buf.h"
 #include "decoder.h"
 
-int process_rtp(u_char *bufIN, size_t inLen,int chn, decoder_t);
+int process_rtp(u_char *bufIN, size_t inLen,int chn, decoder_t,int);
 int UnpackRTPH264( u_char *bufIN, size_t len, decoder_t);
+int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t);
 int make_seqc_right(u_char *bufIN, size_t len, int chn ,decoder_t dec);
 int do_decode(decoder_t dec,int chn,int rtpType);
 

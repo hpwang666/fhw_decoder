@@ -6,11 +6,11 @@ include ../Makefile.pub
 INCLUDES=$(wildcard *.h)
 DEFS = 
 CFLAGS :=   -Wall   $(DEFS)  
-CFLAGS +=  -I./     -I../include -I./common -I./osal -I../connet
+CFLAGS +=  -I./     -I../include -I./common -I./osal -I../connet -I../sqlite3/output/include
 CXXFLAGS:=$(CFLAGS)
 CCFLAGS:=$(CFLAGS)
-LIBPATH :=  -L../lib
-LIBS :=   -l:libmpi.a -l:libaudio_codec.a -lpthread -lm -ldl  ./osal/osal.a ./connet.a
+LIBPATH :=  -L../lib -L../sqlite3/output/lib
+LIBS := -lsqlite3  -l:libmpi.a -l:libaudio_codec.a -lpthread -lm -ldl  ./osal/osal.a ./connet.a
 
 ##### End of variables to change
 SOURCES =  $(wildcard *.c common/*.c) 

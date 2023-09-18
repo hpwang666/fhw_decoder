@@ -9,9 +9,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <errno.h>
+#include <fcntl.h>
 #include "md5.h"
 #include "httpclient.h"
 
+static int connect_server(char *ip, int port);
 int httpParse(httpclient_t ct)
 {
 	char *_nonce = strstr(ct->httpBuf, "nonce");
@@ -153,6 +156,100 @@ ssize_t super_recv(httpclient_t ct)
 	// printf("i=%d",i);
 	return res;
 }
+
+
+
+static int connect_server(char *ip, int port)
+{
+    int sockfd = -1;
+    struct sockaddr_in servaddr;
+    int flags = 0;
+
+    if ((sockfd = socket(AF_INET, SOCK_STREAM , 0)) < 0)
+    {
+        printf("create socket error: %s(errno: %d)\n", strerror(errno), errno);
+        return sockfd;
+    }
+
+    memset(&servaddr, 0, sizeof(servaddr));
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(port);
+    if (inet_pton(AF_INET, ip, &servaddr.sin_addr) <= 0)
+    {
+        printf("inet_pton error for %s\n", ip);
+        close(sockfd);
+        sockfd = -1;
+        return sockfd;
+    }
+
+    //把链路设置为非阻塞
+    flags = fcntl(sockfd, F_GETFL, 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+    
+    if (connect(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+    {
+        if (errno != EINPROGRESS)       /* EINPROGRESS 表示连接正在建立的过程中 */
+        {
+            printf("connect error: %s(errno: %d)\n", strerror(errno), errno);
+            close(sockfd);
+            sockfd = -1;
+        }
+        else
+        {
+            int ret;
+            fd_set write_fds;
+            struct timeval timeout;
+            
+            timeout.tv_sec = 0;
+	        timeout.tv_usec = 300 * 1000;       /* 连接超时时长：100ms */
+
+            FD_ZERO(&write_fds);
+            FD_SET(sockfd, &write_fds);
+  
+            ret = select(sockfd + 1, NULL, &write_fds, NULL, &timeout);
+            switch (ret)
+            {
+                case -1:        /* select错误 */
+                {
+                    printf("connect error: %s(errno: %d)\n", strerror(errno), errno);
+                    close(sockfd);
+                    sockfd = -1;
+                    break;
+                }
+                case 0:         /* 超时 */
+                {
+                    printf("select timeout...\n");
+                    close(sockfd);
+                    sockfd = -1;
+                    break;
+                }
+                default:
+                {
+                    int error = -1;
+                    socklen_t optLen = sizeof(socklen_t);
+                    
+                    getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *)&error, &optLen);       /* 通过 getsockopt 替代 FD_ISSET 判断是否连接 */
+                    if (error != 0)
+                    {
+                        printf("connect error: %s(errno: %d)\n", strerror(errno), errno);
+                        close(sockfd);
+                        sockfd = -1;
+                    }
+                    
+                    break;
+                }
+            }
+        }
+    }
+
+	if(sockfd!= -1)
+	{
+		flags = fcntl(sockfd, F_GETFL, 0);
+		flags &=~O_NONBLOCK;
+		fcntl(sockfd, F_SETFL, flags  );
+	}
+    return sockfd;
+}
 int httpClientGet(httpclient_t ct, char *uri)
 {
 	int len;
@@ -161,19 +258,23 @@ int httpClientGet(httpclient_t ct, char *uri)
 	char code_buf[10];
 	const char *h_header = "User-Agent: FHJT_Http_Client\r\nAccept: */*\r\nConnection: Keep-alive\r\nAccept-Encoding: identity\r\n";
 
+#if 0
 	ct->httpFD = socket(AF_INET, SOCK_STREAM, 0);
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = inet_addr(ct->auth->serverIP); //inet_addr()完成地址格式转换
 	address.sin_port = htons(80);							 //端口
 
 	res = connect(ct->httpFD, (struct sockaddr *)&address, sizeof(address));
+#endif
+	res = connect_server(ct->auth->serverIP,80);
 	if (res == -1)
 	{
-		perror("failed when connect");
+		printf("failed when connect\r\n");
 		ct->httpST = connect_NONE;
 		httpClearConn(ct);
 		return -1;
 	}
+	ct->httpFD=res;
 	ct->method = strdup("GET");
 	sprintf(ct->header, "GET %s HTTP/1.1\r\n", uri);
 	len = strlen(ct->header);
@@ -303,7 +404,7 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 	if(content)
 		strcat(ct->body, content);
 
-	printf("<<<%s%s",ct->header,ct->body);
+	//printf("<<<%s%s",ct->header,ct->body);
 	res = httpSend(ct);
 	if (res < 0)
 	{
@@ -350,7 +451,7 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 	strcat(ct->header, ct->httpBuf);
 	strcat(ct->header, "\r\n");
 
-	printf("<<<%s%s",ct->header,ct->body);
+	//printf("<<<%s%s",ct->header,ct->body);
 	res = httpSend(ct);
 	if (res < 0)
 	{
@@ -359,7 +460,7 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 	}
 
 	res = recv(ct->httpFD, ct->httpBuf, 4096, 0);
-	printf(">>>%s\n",ct->httpBuf);
+	//printf(">>>%s\n",ct->httpBuf);
 	if (res <= 0)
 	{
 		httpClearConn(ct);

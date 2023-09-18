@@ -527,8 +527,9 @@ static RTSP_TYPE get_resp_len(buf_t buf, size_t *PkgLen)
 		int len = (data[2] & 0xFF) << 8 | (data[3] & 0xFF);
 		if(size >=(len + 4) ){
 			*PkgLen = len + 4;
+			//printf("bin type: %02x \r\n",data[5]&0x7f);
 			if((data[5]&0x7f)!=96)
-				return RTSP_NO_H264;
+				return RTSP_NO_H264;//h265也是96，这个表示视频
 			else
 				return RTSP_BIN;
 		}
@@ -638,6 +639,35 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 			rc->sess->sps->len =decodeLen+16; 
 			head = tail+1;
 			tail=(char *)str_nstr((u_char *)head,"\r\n",len-((u_char*)head-data));
+			if(tail){
+				memcpy(ppsB64,head,tail-head);
+				str_t_ndup(rc->pool,rc->sess->pps,128);
+				decodeLen=b64_decode_ex((u_char *)rc->sess->pps->data+16,ppsB64,strlen(ppsB64));
+				rc->sess->pps->len = decodeLen+16;
+				send_pkg(unixFd, rc->chn,rc->sess->sps->data,rc->sess->sps->len );
+				send_pkg(unixFd, rc->chn,rc->sess->pps->data,rc->sess->pps->len );
+				printf("get sps  pps \r\n");
+			}
+		}
+	}
+
+	//以下是针对H265获取 SPS PPS
+	head = (char *)str_nstr((u_char*)data,"sprop-sps",len);
+	if(head){
+		head +=strlen("sprop-sps")+1;
+		tail = (char*)str_nstr((u_char *)head,";",128);
+		if(tail){
+			memcpy(spsB64,head,tail-head);
+			str_t_ndup(rc->pool,rc->sess->sps,128);
+			decodeLen=b64_decode_ex((u_char *)rc->sess->sps->data+16,spsB64,strlen(spsB64));
+			rc->sess->sps->len =decodeLen+16; 
+			head = tail+1;
+			head = (char *)str_nstr((u_char*)tail,"sprop-pps",64);
+			tail=NULL;
+			if(head){
+				head +=strlen("sprop-pps")+1;
+				tail=(char *)str_nstr((u_char *)head,"\r\n",len-((u_char*)head-data));
+			}
 			if(tail){
 				memcpy(ppsB64,head,tail-head);
 				str_t_ndup(rc->pool,rc->sess->pps,128);

@@ -18,6 +18,7 @@
 #include "alltasks.h"
 
 #include "connet.h"
+#include <sqlite3.h>
 #undef  _DEBUG
 //#define _DEBUG
 #ifdef _DEBUG
@@ -26,12 +27,13 @@
 	#define debug(...)
 #endif 
 
-void pkgProcess(u_char *rtpPkg);
+void pkgProcess(u_char *rtpPkg,int);
 FY_S32 decode_h264(int accessable);
 void *_osalLoop(void  *arg);
 static int got_sig_term = 0;
 decEnv_t  decEnv;
 
+int dec_type=0;//0--h264 1-- h265
 
 static void on_sig_term(int sig)
 {
@@ -65,7 +67,7 @@ int server_read_handle(event_t ev)
 				if(strncmp((char *)buf->head,"nihaoya",7)!=0){
 					printf("wrong head \r\n");
 				}
-				pkgProcess((u_char *)buf->head);
+				pkgProcess((u_char *)buf->head,dec_type);
 				buf_consume(buf, sizeof(struct rtpPkg_st));
 			}
 			if(ev->ready){
@@ -132,6 +134,11 @@ int main()
 	conn_t lc ;
 	msec64 t,delta=0;
 	pthread_t osal_worker;
+	sqlite3 * db = NULL; //声明sqlite关键结构指针
+	char * errmsg = NULL;
+	sqlite3_stmt *stmt = NULL;
+	char sql[128];
+	int result;
 	
 	signal(SIGTERM, on_sig_term);
 	signal(SIGQUIT, on_sig_term);
@@ -147,7 +154,31 @@ int main()
 	lc->ls_handler = init_accepted_conn;
 	lc->ls_arg = NULL;//这里利用lc将参数最终传递给所有的c->data
 	
-	decode_h264(0);
+	result = sqlite3_open( "/mnt/usr/ss.db",&db );
+
+	if( result != SQLITE_OK )
+	{
+		printf("can not open the database %s\r\n",sqlite3_errmsg(db));
+		sqlite3_close(db);
+		return -1;
+	}
+	sprintf(sql,"select * from controller");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d h_type: %d, mutx4_type:%d,  \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_int(stmt, 2));
+		dec_type= sqlite3_column_int(stmt, 1);
+	}
+	sqlite3_finalize(stmt);
+	sqlite3_close( db );
+
+	decode_h264(dec_type);
 	decEnv = create_dec_chns();
 
 	osalInitEnv();

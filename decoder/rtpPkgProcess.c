@@ -19,7 +19,7 @@
 //当是rtp数据包时 就是传的数据否则就是状态
 				//ring_push(ring, rc->chn,buf->head,rtpPkgLen);
 				// ring_push(ring,CFG_CHNERR,(u_char *)&chnStatus,sizeof(struct chnStatus_st));
-void pkgProcess(u_char *rtpPkg)
+void pkgProcess(u_char *rtpPkg,int dec_type)
 {
 	FY_S32 s32Ret;
 	int i;
@@ -225,7 +225,7 @@ void pkgProcess(u_char *rtpPkg)
 		osalClearTaskEvent(1,0x00000001<<pkg->cmd);
 		if(pkg->cmd < u32WndNum)//TODO 这里要和 1 4 6 9 一致  防止通道越界 允许解码
 			//printf("%d %d\r\n",pkg->cmd,pkg->len);
-			process_rtp(pkg->data,pkg->len,pkg->cmd,&decEnv->dec25[pkg->cmd]);
+			process_rtp(pkg->data,pkg->len,pkg->cmd,&decEnv->dec25[pkg->cmd],dec_type);
 	}
 }
 

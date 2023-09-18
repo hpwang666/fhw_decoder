@@ -30,12 +30,12 @@ static VDEC_CHN_ATTR_S stVdecChnAttr[CHNS];
     
 	//这里只需要将前4个通道设置成1080P分辨率
     for(i = 0 ; i < 4; i++) {
-    	astSize[i].u32Width	= 1920;
-	    astSize[i].u32Height = 1088;
+    	astSize[i].u32Width	= 2688;
+	    astSize[i].u32Height = 1520;
     }
     for(i = 4 ; i < s32ChnNum; i++) {
-    	astSize[i].u32Width	= 640;
-	    astSize[i].u32Height = 480;
+    	astSize[i].u32Width	= 704;
+	    astSize[i].u32Height = 576;
     }
 
 	FY_MPI_VDEC_GetModParam(&mod_parm);

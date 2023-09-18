@@ -152,7 +152,7 @@ int main()
 	msec64 t,delta;
 	int ret;	
 	conn_t lc;
-//	rtspClient_t rc[16];
+	//rtspClient_t rc[16];
 	
 	signal(SIGTERM, on_sig_term);
 	signal(SIGQUIT, on_sig_term);
@@ -180,7 +180,7 @@ int main()
 	rtpPkg = malloc(sizeof(struct rtpPkg_st));
 	
 #if 0
-	rc[0] = init_rtsp_clients(list,"172.16.10.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
+	rc[0] = init_rtsp_clients(list,"172.16.10.44",554,"admin","fhjt12345","/h265/ch1/main/av_stream");	
 	rc[0]->chn = 0;
 	rc[1] = init_rtsp_clients(list,"172.16.10.43",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
 	rc[1]->chn = 1;
