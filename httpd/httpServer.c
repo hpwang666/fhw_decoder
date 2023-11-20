@@ -7,6 +7,7 @@
 #include "httpServer.h"
 
 #include <sqlite3.h>
+#include "connet.h"
 
 
 #undef  _DEBUG
@@ -18,6 +19,9 @@
 #endif
 
 
+#define tPrint(x) \
+	snprintf(testPrint,1023,"%s",x);\
+	printf(">>>%s\r\n",testPrint);
 
 
 static http_trans_control trans_c;
@@ -54,10 +58,19 @@ void make_basic_config_setting_json_callback(char* buf, char* config_msg)
 void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 {
 	char address[16][32];
-	char plcCtrl[3][32];
+	char plcCtrl[3][64];
+	char version[128];
 	u_char muxt4=0;
     u_char dec=0; 	
+	int eventChn=0;
+	int uploadPort=0;
+	int eventType=0;
 
+	char plcAddr[32];
+	int plcPort=0;
+	int r0=0;
+	int r1=0;
+	int protocol=0;
 	sqlite3 * db = NULL; //声明sqlite关键结构指针
 	int result;
 	int i=0;
@@ -113,17 +126,62 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 	while (SQLITE_ROW == sqlite3_step(stmt)) {
-		printf("id:%d h_type: %d,muxt4:%d \n",\
+		printf("id:%d h_type: %d,muxt4:%d ,version:%s\n",\
 				sqlite3_column_int(stmt, 0),\
 				sqlite3_column_int(stmt, 1),\
-				sqlite3_column_int(stmt, 2));\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_text(stmt, 3));\
 
 			muxt4=sqlite3_column_int(stmt, 2);
 		dec=sqlite3_column_int(stmt, 1);
+		sprintf(version,"%s",sqlite3_column_text(stmt, 3));
 	}
 	sqlite3_finalize(stmt);
 
 
+	sprintf(sql,"select * from event where id = 1");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d event_chn: %d,upload_port:%d ,event_type:%d \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_int(stmt, 3));
+
+		uploadPort=sqlite3_column_int(stmt, 2);
+		eventChn=sqlite3_column_int(stmt, 1);
+		eventType=sqlite3_column_int(stmt, 3);
+	}
+	sqlite3_finalize(stmt);
+
+
+
+	sprintf(sql,"select * from plc_info where id = 1");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d addr: %s,port:%d ,r0:%d,r1:%d,protocol:%d \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_text(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_int(stmt, 3),\
+				sqlite3_column_int(stmt, 4),\
+				sqlite3_column_int(stmt, 5));
+
+		sprintf(plcAddr,"%s",sqlite3_column_text(stmt, 1));
+		plcPort=sqlite3_column_int(stmt, 2);
+		r0=sqlite3_column_int(stmt, 3);
+		r1=sqlite3_column_int(stmt, 4);
+		protocol=sqlite3_column_int(stmt, 5);
+	}
+	sqlite3_finalize(stmt);
 	sqlite3_close( db );
   sprintf(buf,"postConfigCallback({\
 				\"stream1\":\"%s\",\
@@ -147,12 +205,23 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"stop\":\"%s\",\
 				\"muxt4\":\"%d\",\
 				\"dec\":\"%d\",\
+				\"event_chn\":\"%d\",\
+				\"upload_port\":\"%d\",\
+				\"event_type\":\"%d\",\
+				\"version\":\"%s\",\
+				\"plc_addr\":\"%s\",\
+				\"plc_port\":\"%d\",\
+				\"r0\":\"%d\",\
+				\"r1\":\"%d\",\
+				\"protocol\":\"%d\",\
                 });",\
 				address[0],address[1],address[2],address[3],\
 				address[4],address[5],address[6],address[7],\
 				address[8],address[9],address[10],address[11],\
 				address[12],address[13],address[14],address[15],\
-				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec
+				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec,eventChn,uploadPort,eventType,\
+				version,
+  				plcAddr,plcPort,r0,r1,protocol
          );
 		
 }
@@ -265,6 +334,11 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 	ret= sqlite3_open( "/mnt/usr/ss.db",&db );
 	char sql[256];
 
+
+	int eventChn=0;
+	int uploadPort=0;
+	int eventType=0;
+
 	if( ret!= SQLITE_OK )
 	{
 		printf("can not open the database %s\r\n",sqlite3_errmsg(db));
@@ -343,6 +417,99 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 	{
 		printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
 		}
+
+
+	sprintf(stream,"event_chn");
+	param = get_http_param_value(http_request->URI,stream);		
+	if(verify_num(param)&&(atoi(param)<17)&&(atoi(param)>0)){
+		sprintf(sql,"update event set event_chn= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+
+
+	sprintf(stream,"upload_port");
+	param = get_http_param_value(http_request->URI,stream);		
+	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>8000)){
+		sprintf(sql,"update event set upload_port= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+
+	sprintf(stream,"event_type");
+	param = get_http_param_value(http_request->URI,stream);		
+	sprintf(sql,"update event set event_type= \"%s\" where id = 1",param);
+	ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+	if(ret!= SQLITE_OK )
+	{
+		printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+	}
+
+
+
+	sprintf(stream,"plc_addr");
+	param = get_http_param_value(http_request->URI,stream);		
+	if(verify_ip_address(param)){
+		sprintf(sql,"update plc_info set address= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+
+
+	sprintf(stream,"plc_port");
+	param = get_http_param_value(http_request->URI,stream);		
+	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>8000)){
+		sprintf(sql,"update plc_info set port= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+
+
+	sprintf(stream,"r0");
+	param = get_http_param_value(http_request->URI,stream);		
+	if(verify_num(param)&&(atoi(param)<50000)){
+		sprintf(sql,"update plc_info set r0= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+	sprintf(stream,"r1");
+	param = get_http_param_value(http_request->URI,stream);		
+	if(verify_num(param)&&(atoi(param)<50000)){
+		sprintf(sql,"update plc_info set r1= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+	sprintf(stream,"protocol");
+	param = get_http_param_value(http_request->URI,stream);		
+	if(verify_num(param)&&(atoi(param)<10)){
+		sprintf(sql,"update plc_info set protocol= \"%s\" where id = 1",param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+	}
+
+
+
 	sqlite3_close( db );
 	return 1;
 	//else
@@ -371,6 +538,7 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 	char* pos3;
 	char* pos4;	
 	char* fff;
+	char testPrint[1024];
 
 	int i =0;
 	int available=0;
@@ -381,36 +549,43 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 	
 	pos0=http_request->URI;
 	fff = pos0;
+	*(fff+len-5)='\0';
 	mid(pos0,"boundary=","\r\n",boundary);
 	mid(pos0,"Content-Length: ","\r\n",sub);//含有标记的总大小
 	printf("c_len: %s\r\n",sub);
 	content_len=atoi(sub);//73k
 	printf("len: %d\r\n",len);
+	printf("boundary: %s\r\n",boundary);
 	//第一包内容，特殊标记的后4个\r\n为正文
 	pos1=strstr(pos0,boundary);
 	pos1+=strlen(boundary);
 	pos2=strstr(pos1,boundary);//特殊标记头位置,长度要多2个,--boundary
 	if(pos2==NULL){
+		printf("begin find \r\n");
 		for(i=0;i<10;i++){
-			usleep(1000);
+			usleep(10000);
 			if(c->fd!= -1)
 				ret = ioctl(c->fd, FIONREAD,&available);
 			if (available>0&& ret == 0)		
 			{
-				ret =c->recv(c, fff+strlen(fff), 1024); 				
+				ret =c->recv(c, (u_char*)(fff+len-5), 1024); 				
+				printf("ret %d \r\n",ret);
+				//tPrint(pos0);
+				//tPrint(pos1);
+				//tPrint(fff);
 				len+=ret;
-				pos2=strstr(pos1,boundary);//特殊标记头位置,长度要多2个,--boundary
+				//pos2=strstr(pos1,boundary);//特殊标记头位置,长度要多2个,--boundary
+				pos2=str_nstr(pos1,boundary,ret);//特殊标记头位置,长度要多2个,--boundary
 				break;
 			}
 		}
 
 	}
 	if(i==10) return 0;
-	printf(">>%s \r\n",pos0);
+	//printf(">>%s \r\n",pos0);
 	mid(pos2,"filename=\"","\"",filename);
 	printf(">>%s\r\n",filename);
 	pos3=strstr(pos2,"\r\n\r\n")+4;//正文起点
-	printf("3\r\n");
 
 	//找解释标志
 	if((pos4=strstr(pos3,boundary))!=NULL)//第一包就结束
@@ -428,6 +603,7 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 			printf("huge file!\n");
 			return 0;
 		}			
+		printf("this len %d %d\r\n",len,pos3-pos0);
 		rx_len = len -(pos3-pos0)-5;//"POST "
 		recv_on = 1;
 		printf("@@@%d\r\n",rx_len);
@@ -443,14 +619,14 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 	}
 	printf("@@@FirmSize:%d\r\n",upload_file_len);	
 	leaveCounter=0;
-	while(recv_on&&leaveCounter<500)
+	while(recv_on&&leaveCounter<2000)
 	{
 		uint16_t temp_len=1024;
 		uint16_t tail_len;
 		 available=0;
 		 ret=-1;
 		//temp_len = getSn_RX_RSR(s);
-		usleep(1000);
+		usleep(100);
 		leaveCounter++;
 		if(c->fd!= -1)
 			ret = ioctl(c->fd, FIONREAD,&available);
@@ -458,15 +634,21 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 		{
 			temp_len = c->recv(c, (uint8_t*)http_buf, 2048); 				
 //			*(((uint8_t*)http_buf)+temp_len) = 0;				//第二包
-//			printf("\r\n@@收请求%d\r\n%s",temp_len,http_buf);
-			tail_len=temp_len-4-strlen(boundary)-4;
-			if(upload_file_len==(rx_len+tail_len))
+			//printf("\r\n@@收请求%d\r\n%s",temp_len,http_buf);
+			tail_len=temp_len-4-strlen(boundary)-4-2;
+			if(upload_file_len<=(rx_len+temp_len))
 			{
 				printf("tail!\r\n");//是尾部
+
+				
 				recv_on=0;
-				memcpy(rcvBuf+rx_len,http_buf,tail_len);
+				memcpy(rcvBuf+rx_len,http_buf,upload_file_len-rx_len);
 				if(strlen(filename)){
 					fp = fopen(filename,"wb+");
+					if(fp==NULL) {
+						printf("open %s faild\r\n",filename);
+						return 1;
+					}
 					fwrite(rcvBuf,upload_file_len,1,fp);
 					fclose(fp);
 				}

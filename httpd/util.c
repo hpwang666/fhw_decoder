@@ -263,6 +263,16 @@ int verify_ip_address(char* src )
 }
 
 
+int verify_num(char* src )
+{
+	int j;
+	
+	for(j=0;j<strlen(src);j++){
+		if(src[j]>0x39||src[j]<0x30)
+			return 0;
+	}
+	return 1;	
+}
 
 int verify_plc_ctrl(char* src )
 {
@@ -272,11 +282,12 @@ int verify_plc_ctrl(char* src )
 	char* tok = tsrc;
 	
 	strcpy(tsrc,src);
+	if(strlen(src)==0) return 0;
 	
 	for(i = 0; i < 4; i++)
 	{
 		tok = strtok(tok,",");
-		if ( !tok ) return 0;
+		if ( !tok ) return 1;
 		j=strlen(tok);
 		if(j>3) return 0;
 		for(j=0;j<strlen(tok);j++){

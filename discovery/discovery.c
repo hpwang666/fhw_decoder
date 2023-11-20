@@ -163,7 +163,7 @@ static void do_modify_ip(modifyIP_t modifyIP)
 {
 		char wBuf[512]={0};
 		printf("%s\n",modifyIP->ctx);
-		if(0 != memcmp(modifyIP->ctx, dev_ctx, 8))
+		if(0 != memcmp(modifyIP->ctx, dev_ctx+4, 8))//只验证后8位
 		return;
 		//printf(">>>>>>>>>> modify ip \n");
 		FILE *fp;
@@ -186,7 +186,7 @@ static void do_modify_ip(modifyIP_t modifyIP)
 
 
 static void do_reboot(reboot_t reboot){
-	if(0 != memcmp(reboot->ctx, dev_ctx, 8))
+	if(0 != memcmp(reboot->ctx, dev_ctx+4, 8))//只验证后8位
 		return;
 	printf(">>>>>>>>>> reboot \n");
 	system("reboot");
@@ -299,7 +299,7 @@ int getDevInfo( devReport_t dev)
 	
 	fread(readBuf,1,512,fp);
 	
-	memcpy(dev->ctx,dev_ctx,8);
+	snprintf(dev->ctx,9,"%s",dev_ctx+4);
 	memcpy(dev->serial,dev_ctx,12);
 	
 	snprintf(dev->model,40,"fhk201");

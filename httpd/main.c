@@ -96,14 +96,14 @@ int main()
 	init_conn_queue();
 	init_timer();
 	init_epoll();
-
+	printf(" Firmware compile time:%s %s\r\n",__DATE__,__TIME__);
 	
 	lc = create_listening(80);
 	lc->ls_handler = init_accepted_conn;
 	lc->ls_arg = calloc(1,sizeof(struct http_request_st));//这里利用lc将参数最终传递给所有的c->data
 	
-	int bReuseaddr=1;
-	setsockopt(lc->fd,SOL_SOCKET ,SO_REUSEADDR,(const char*)&bReuseaddr,sizeof(int));
+	//int bReuseaddr=1;
+	//setsockopt(lc->fd,SOL_SOCKET ,SO_REUSEADDR,(const char*)&bReuseaddr,sizeof(int));
 
 	while(!got_sig_term)
 	{

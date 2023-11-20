@@ -137,26 +137,13 @@ static int send_handler(event_t ev)
 	if(send_0)	{
 		
 
-		for(i=0;i<4;i++){
+		for(i=0;i<2;i++){
 			memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));
 			netCfg.magic=PKG_MAGIC;
 			netCfg.chn=i;
-			netCfg.subwin=6;
+			netCfg.subwin=2;
 			sprintf(netCfg.mediaInfo.camAddress,"172.16.10.%d",44);
 			sprintf(netCfg.mediaInfo.camUrl,"/h264/ch%d/main/av_stream",1);
-			sprintf(netCfg.mediaInfo.camUser,"admin");
-			sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
-			netCfg.mediaInfo.camPort =554;
-			
-			c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));
-		}
-		for(i=4;i<6;i++){
-			memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));
-			netCfg.magic=PKG_MAGIC;
-			netCfg.chn=i;
-			netCfg.subwin=6;
-			sprintf(netCfg.mediaInfo.camAddress,"172.16.10.%d",43);
-			sprintf(netCfg.mediaInfo.camUrl,"/h264/ch%d/sub/av_stream",1);
 			sprintf(netCfg.mediaInfo.camUser,"admin");
 			sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
 			netCfg.mediaInfo.camPort =554;

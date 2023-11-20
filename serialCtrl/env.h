@@ -24,7 +24,7 @@ typedef struct _camConnection *camConnection;
 
 struct _loop_ev
 {
-	char plcCams[3][32];
+	char plcCams[3][64];
 	camConnection camConn;
 	queue_t ptzQueue;
 	queue_t voQueue;
@@ -36,6 +36,12 @@ struct _loop_ev
 
 	int muxt4;//4画面时显示子码流还是主码流
 	int decType;//0--h264 1--h265
+
+	char plcAddr[32]; //PLC的IP地址
+	int plcPort; //plc的端口
+	int r0;  //寄存器0
+	int r1;  //寄存器1
+	int protocol;  //plc总线协议
 	
 	int uart_running;
 	int vo_running;

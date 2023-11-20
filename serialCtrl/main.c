@@ -13,7 +13,7 @@
 #include "connet.h"
 #include "voProcess.h"
 #include "udpServer.h"
- 
+#include "plcBus.h" 
 
 #undef  _DEBUG
 #define _DEBUG
@@ -28,14 +28,14 @@ static void on_sig_term(int sig);
 
 void *_mainLoop(void  *arg)  
 {  
-	loop_ev env = (loop_ev)arg;
+	loop_ev ev = (loop_ev)arg;
 	char data[4];//we define offset=0 channel,
 				//offset=1 cmd
 				//offset=2 start/stop
 	struct custom_st custom;
-	while(env->uart_running)
+	while(ev->uart_running)
 	{
-		if(4==serialRecv(env->serialFd,data)){
+		if(4==serialRecv(ev->serialFd,data)){
 			switch (data[1]){
 				case 0x1a:
 				case 0x2a:
@@ -43,26 +43,26 @@ void *_mainLoop(void  *arg)
 				case 0x6a:
 				case 0x9a:
 				case 0xfa:
-					env->voType = data[1]	;//存储是为了判断单画面下操作PTZ
-					env->channel = data[2]-0x80;//多画面下4-1 4-2 ...
-					custom.ch = env->channel;
-					custom.cmd = env->voType;
+					ev->voType = data[1]	;//存储是为了判断单画面下操作PTZ
+					ev->channel = data[2]-0x80;//多画面下4-1 4-2 ...
+					custom.ch = ev->channel;
+					custom.cmd = ev->voType;
 					custom.stop = data[3];//在这里没有用
-					queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
+					queue_push(ev->voQueue,1,sizeof(struct custom_st),&custom);
 					break;
 				case 0x0a:
-					custom.ch = env->channel;
+					custom.ch = ev->channel;
 					if(data[2]==0){
-						custom.cmd = env->lastCmd;	
+						custom.cmd = ev->lastCmd;	
 						custom.stop = 1;
 					}
 					else{
 						custom.cmd = data[2]*4+data[3]-0x80;
 						custom.stop = 0;
-						env->lastCmd = custom.cmd;
+						ev->lastCmd = custom.cmd;
 					}
-					if(env->voType ==0x1a)//必须是单画面下
-						queue_push(env->ptzQueue,0,sizeof(struct custom_st),&custom);
+					if(ev->voType ==0x1a)//必须是单画面下
+						queue_push(ev->ptzQueue,0,sizeof(struct custom_st),&custom);
 					break;
 				default:
 					printf("get invalid data %02x\r\n",data[1]);
@@ -80,7 +80,7 @@ void *_voLoop(void  *arg)
 	msec64 t,delta=0;
 	queueNode_t tmp;
 
-	loop_ev env = (loop_ev)arg;
+	loop_ev ev = (loop_ev)arg;
 
 	printf("vo loop start...\r\n");
 	init_conn_queue();
@@ -99,8 +99,14 @@ void *_voLoop(void  *arg)
 
 
 	lc = create_listening_udp(11000);
-	init_udp_conn(lc,decConn);
-	while(env->vo_running)
+	init_udp_conn(lc,ev);
+
+
+
+	if(ev->protocol){
+		initPlcBus(ev);
+	}
+	while(ev->vo_running)
 	{
 		t = find_timer();
 		process_events(t,1);
@@ -110,10 +116,10 @@ void *_voLoop(void  *arg)
 		}
 
 
-		tmp = queue_get(env->voQueue);
+		tmp = queue_get(ev->voQueue);
 		if(tmp){
-			transVo(decConn,(custom_t)tmp->data);
-			queue_cache(env->voQueue,tmp);
+			transVo(ev,decConn,(custom_t)tmp->data);
+			queue_cache(ev->voQueue,tmp);
 		} 
 	
 	}
@@ -127,15 +133,15 @@ void *_voLoop(void  *arg)
 
 void *_httpLoop(void  *arg)
 {
-	loop_ev env = (loop_ev)arg;
+	loop_ev ev = (loop_ev)arg;
 	queueNode_t tmp;
-	while(env->http_running)
+	while(ev->http_running)
 	{
 		usleep(30000);
-		tmp = queue_get(env->ptzQueue);
+		tmp = queue_get(ev->ptzQueue);
 		if(tmp){
-			transCmd(env,(custom_t)tmp->data);
-			queue_cache(env->ptzQueue,tmp);
+			transCmd(ev,(custom_t)tmp->data);
+			queue_cache(ev->ptzQueue,tmp);
 		} 
 	}
 	return 0;
@@ -145,45 +151,45 @@ void *_httpLoop(void  *arg)
 loop_ev init (void)
 {
 	int i =0;
-	loop_ev env;
+	loop_ev ev;
 	struct custom_st custom;
-	env = (loop_ev)calloc(1,sizeof(struct _loop_ev));
-	env->camConn = (camConnection)calloc(16,sizeof(struct _camConnection));
+	ev = (loop_ev)calloc(1,sizeof(struct _loop_ev));
+	ev->camConn = (camConnection)calloc(16,sizeof(struct _camConnection));
 	for(i=0;i<16;i++)
 	{
-		env->camConn[i].channel = i;
+		ev->camConn[i].channel = i;
 	}
-	getChnnelInfo(env);
+	getChnnelInfo(ev);
 	
-	env->serialFd = initSerial();
-	env->uart_running = 1;
-	env->vo_running =1 ;
-	env->http_running = 1;
+	ev->serialFd = initSerial();
+	ev->uart_running = 1;
+	ev->vo_running =1 ;
+	ev->http_running = 1;
 	
-	env->ptzQueue=queue_new(16,sizeof(struct custom_st ));
-	env->voQueue=queue_new(16,sizeof(struct custom_st ));
+	ev->ptzQueue=queue_new(16,sizeof(struct custom_st ));
+	ev->voQueue=queue_new(16,sizeof(struct custom_st ));
 	
 	custom.ch = 0;
 	custom.cmd = 0x1a;
 	custom.stop = 0;//在这里没有用
-	queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
-	pthread_create(&env->uart_worker, NULL, _mainLoop, env);
-	pthread_create(&env->vo_worker, NULL, _voLoop, env);
-	pthread_create(&env->http_worker, NULL, _httpLoop, env);
+	queue_push(ev->voQueue,1,sizeof(struct custom_st),&custom);
+	pthread_create(&ev->uart_worker, NULL, _mainLoop, ev);
+	pthread_create(&ev->vo_worker, NULL, _voLoop, ev);
+	pthread_create(&ev->http_worker, NULL, _httpLoop, ev);
 	
-	pthread_mutex_init(&env->mutex, NULL);
-	pthread_mutex_init(&env->mutex_cmd, NULL);
-	return env;
+	pthread_mutex_init(&ev->mutex, NULL);
+	pthread_mutex_init(&ev->mutex_cmd, NULL);
+	return ev;
 }
 
-void clean(loop_ev env)
+void clean(loop_ev ev)
 {
-	pthread_mutex_destroy(&env->mutex);
-	closeSerial(env->serialFd);
-	free(env->camConn);
-	queue_free(env->ptzQueue);
-	queue_free(env->voQueue);
-	free(env);
+	pthread_mutex_destroy(&ev->mutex);
+	closeSerial(ev->serialFd);
+	free(ev->camConn);
+	queue_free(ev->ptzQueue);
+	queue_free(ev->voQueue);
+	free(ev);
 }
 static void on_sig_term(int sig)
 {

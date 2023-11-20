@@ -98,6 +98,38 @@ int getChnnelInfo(loop_ev ev)
 	}
 	sqlite3_finalize(stmt);
 
+
+
+	sprintf(sql,"select * from plc_info where id = 1");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d addr: %s,port:%d ,r0:%d,r1:%d,protocol:%d \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_text(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_int(stmt, 3),\
+				sqlite3_column_int(stmt, 4),\
+				sqlite3_column_int(stmt, 5));
+
+		sprintf(ev->plcAddr,"%s",sqlite3_column_text(stmt, 1));
+		ev->plcPort=sqlite3_column_int(stmt, 2);
+		ev->r0=sqlite3_column_int(stmt, 3);
+		ev->r1=sqlite3_column_int(stmt, 4);
+		ev->protocol=sqlite3_column_int(stmt, 5);
+	}
+
+	printf("%s:%d\r\n",ev->plcAddr,ev->plcPort);
+	printf(" Firmware compile time:%s %s\r\n",__DATE__,__TIME__);
+	sprintf(sql,"update controller set version= \"%s %s\" where id = 1",__DATE__,__TIME__);
+	result= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+	if(result!= SQLITE_OK )
+	{
+		printf( "更新失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
 	sqlite3_close( db );
 	return 0;
 }

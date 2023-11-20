@@ -1,19 +1,33 @@
 <!DOCTYPE html>
 <html>
 <TITLE>Index</TITLE>
-<meta http-equiv='Content-Type' content='text/html; charset=GB2312'/>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
 <head>
 <script>
 
 function $(id) { return document.getElementById(id); };
 function postConfigCallback(o) {
-		for(var i=1;i<=17;i++){
-				if ($('txtstream'+i))  $('txtstream'+i).value = o['stream'+i];}
-		if ($('txtleft'))  $('txtleft').value = o['left'];
-		if ($('txtright'))  $('txtright').value = o['right'];
-		if ($('txtstop'))  $('txtstop').value = o['stop'];
-		$('in3'+o.muxt4).checked=true;
-		$('in4'+o.dec).checked=true;
+	if ($('txtversion'))  $('txtversion').innerText = o['version'];
+
+	for(var i=1;i<=17;i++){
+		if ($('txtstream'+i))  $('txtstream'+i).value = o['stream'+i];}
+	if ($('txtleft'))  $('txtleft').value = o['left'];
+	if ($('txtright'))  $('txtright').value = o['right'];
+	if ($('txtstop'))  $('txtstop').value = o['stop'];
+	$('in3'+o.muxt4).checked=true;
+	$('in4'+o.dec).checked=true;
+
+	if ($('txtevent_chn'))  $('txtevent_chn').value = o['event_chn'];
+	if ($('txtupload_port'))  $('txtupload_port').value = o['upload_port'];
+	if ($('txtevent_type'))  $('txtevent_type').value = o['event_type'];
+	
+	if ($('txtplc_addr'))  $('txtplc_addr').value = o['plc_addr'];
+	if ($('txtplc_port'))  $('txtplc_port').value = o['plc_port'];
+	if ($('plc_offset0'))  $('plc_offset0').value = o['r0'];
+	if ($('plc_offset1'))  $('plc_offset1').value = o['r1'];
+	if ($('txtprotocol'))  $('txtprotocol').value = o['protocol'];
+
+
 };
 </script>
 
@@ -21,6 +35,10 @@ function postConfigCallback(o) {
 </head>
 <BODY>
 <P>Welcome to FHJT webserver.
+</br>
+</P>
+<span id='txtversion' name='version'></span>
+</br>
 </br>
 </br>
 <p><input type='password' class='passw' id='access' name='access'size='10'value=''/><button onClick="login()">login</button></p>
@@ -35,9 +53,34 @@ function postConfigCallback(o) {
 <p><label >ch 8:</label><input type='text' id='txtstream8' name='stream8'size='16' /><label >ch 16:</label><input type='text' id='txtstream16' name='stream16'size='16' /></p>
 <p><label >LEFT</label><input type='text' id='txtleft' name='left'size='16' /></p>
 <p><label >RIGHT</label><input type='text' id='txtright' name='right'size='16' /></p>
-<p><label >STOP</label><input type='text' id='txtstop' name='stop'size='16' /></p>
+<p><label >STOP</label><input type='text' id='txtstop' name='stop'size='32' /></p>
 <p>Mutx4_2K: <input type='radio' id='in30' name='muxt4' value='0'/>SUB<input type='radio' id='in31' name='muxt4' value='1'/>MAIN</p> 
 <p>dec_type: <input type='radio' id='in40' name='dec' value='0'/>H264<input type='radio' id='in41' name='dec' value='1'/>H265</p>
+
+</br>
+</br>
+<p>
+	<label >PLC地址:</label><input type='text' id='txtplc_addr' name='plc_addr'size='16' />
+	<label >端口(8000-20000):</label><input type='text' id='txtplc_port' name='plc_port'size='8' />
+	<label style="width:100px">行走寄存器(<50000):</label><input type='text' id='plc_offset0' name='r0'size='8' />
+	<label style="width:100px">变幅寄存器(<50000):</label><input type='text' id='plc_offset1' name='r1'size='8' />
+	<label >协议簇:</label>
+	<select id='txtprotocol' name='protocol'>
+		<option value="0">不启用</option>
+		<option value="1">modbus</option>
+		<option value="2">memobus</option>
+	</select>
+</p>
+
+<p>
+	<label style="width:120px">抓拍机触发通道:</label><input type='text' id='txtevent_chn' name='event_chn'size='8' />
+	<label >触发端口(8000-20000):</label><input type='text' id='txtupload_port' name='upload_port'size='8' />
+	<select id='txtevent_type' name='event_type'>
+		<option value="0">人脸抓拍</option>
+		<option value="1">人体抓拍</option>
+		<option value="2">机动车</option>
+	</select>
+</p>
 
 <INPUT TYPE="submit">
 </FORM>
@@ -45,7 +88,7 @@ function postConfigCallback(o) {
 <p><label >Firmware update</label></p>
 <p><input type='file' id='file' name='file' /></p>
 <p><input type='submit' id='upbtn' value='Upload' disabled='disabled' /></p>
-<p>Do not use any unauthorized firmware upgrade. Do not shutdown the power during the upgrade</p>
+
 </form>
 <script type="text/javascript" src="post_config.js"></script>
 <script>
@@ -57,9 +100,9 @@ function login(){
 		var msg = xmlhttp.responseText;
 		if(msg!=0)
 		{alert("password error");}
-		}else{
+		else{
 				$("upbtn").removeAttribute('disabled');
-			}};
+			}}};
 		xmlhttp.open("POST","/login.cgi",true);
 		xmlhttp.send("input="+access);
 }
@@ -68,7 +111,7 @@ function login(){
 <style type='text/css'>
 body {text-align:left; background-color:#c0deed;font-family:Verdana;}
 #main {margin-right:auto;margin-left:auto;margin-top:30px;}
-label{display:inline-block;width:180px;}
+label{width:80px;margin-left:20px;}
 #main h3{color:#66b3ff; text-decoration:underline;}
 .column {float:left;margin-right:50px;width: 40%;}
 @media screen and (max-width: 800px) {.column {width: 100%;}}

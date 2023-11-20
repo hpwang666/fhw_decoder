@@ -24,7 +24,27 @@ int main()
 		return -1;
 	}
 #if 0
-	result = sqlite3_exec( db, "create table controller( ID integer primary key autoincrement, h_type int,muxt4_type int)", NULL, NULL, &errmsg );
+	result = sqlite3_exec( db, "drop table if exists plc_info", NULL, NULL, &errmsg );
+	if(result != SQLITE_OK ){
+		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	result = sqlite3_exec( db, "create table plc_info( ID integer primary key autoincrement, address varchar(32),port int,r0 int,r1 int,protocol int)", NULL, NULL, &errmsg );
+	if(result != SQLITE_OK )
+	{
+		printf( "创建表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+
+	//插入一些记录
+	result = sqlite3_exec( db, "insert into plc_info(address,port,r0,r1,protocol) values ('1.2.3.4',10000,1,2,1)", NULL, 0, &errmsg );
+	if(result != SQLITE_OK )
+	{
+		printf( "插入记录失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+
+	}
+
+#endif
+#if 0
+	result = sqlite3_exec( db, "create table event( ID integer primary key autoincrement, event_chn int,upload_port int,event_type int)", NULL, NULL, &errmsg );
 
 	if(result != SQLITE_OK )
 
@@ -34,7 +54,35 @@ int main()
 
 
 	//插入一些记录
-	result = sqlite3_exec( db, "insert into controller(h_type,muxt4_type) values (0,0)", NULL, 0, &errmsg );
+	result = sqlite3_exec( db, "insert into event(event_chn,upload_port,event_type) values (12,10002,2)", NULL, 0, &errmsg );
+	if(result != SQLITE_OK )
+
+	{
+		printf( "插入记录失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+
+		}
+
+#endif
+#if 0
+	result = sqlite3_exec( db, "drop table if exists controller", NULL, NULL, &errmsg );
+
+	if(result != SQLITE_OK )
+
+	{
+		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+
+	result = sqlite3_exec( db, "create table controller( ID integer primary key autoincrement, h_type int,muxt4_type int,version varchar(128),info varchar(128))", NULL, NULL, &errmsg );
+
+	if(result != SQLITE_OK )
+
+	{
+		printf( "创建表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+
+
+	//插入一些记录
+	result = sqlite3_exec( db, "insert into controller(h_type,muxt4_type,version,info) values (0,0,'2023-1104','new')", NULL, 0, &errmsg );
 	if(result != SQLITE_OK )
 
 	{

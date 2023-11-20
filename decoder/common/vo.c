@@ -436,7 +436,7 @@ FY_S32 vo_get_chnRect(VO_CHN voChn, SAMPLE_VO_MODE_E enMode, SIZE_S *pstSize, RE
 
     if (VO_MODE_1L_1R == enMode) {
         u32CellW = ALIGN_BACK(pstSize->u32Width/u32Square,  16);
-        u32CellH = ALIGN_BACK(pstSize->u32Height, 2);
+        u32CellH = ALIGN_BACK(pstSize->u32Height/2, 2);
         s32XO = ALIGN_BACK((pstSize->u32Width - u32CellW*u32Square)/2, 2);
         s32YO = ALIGN_BACK((pstSize->u32Height - u32CellH)/2, 2);
     } else {

@@ -35,6 +35,7 @@ prepare:
 clean:
 	-rm -rf *.o $(ALL) *~ obj/* obj
 install:
+	$(STRIP) $(TARGET)
 	install $(TARGET) $(INSTALL_DIR)
 
 ##### Any additional, platform-specific rules come here:

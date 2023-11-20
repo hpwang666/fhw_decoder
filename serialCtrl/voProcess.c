@@ -10,7 +10,6 @@
 #include "media.h"
 #include "env.h"
 
-extern loop_ev env;
 		
 int rtsp_read_handle(event_t ev)
 {
@@ -139,41 +138,108 @@ int rtsp_reconnect_peer(event_t ev)
 }
 
 
-int transVo(conn_t c, custom_t customCmd)
+int transVo(loop_ev env,conn_t c, custom_t customCmd)
 {
 	int i =0;	
 	struct netConfig_st netCfg;
-	int voMutx = (customCmd->cmd&0xff)>>4;
-	int chn = customCmd->ch;
+	int voMutx ;
+	int chn ;
+	char cams[64];
+	int chns[16];
+	const char* sep = ",";
+	int allChns=0;
+	char* p = NULL;
 
-	if(voMutx == 15) voMutx =16;
-	int sqlite3Chn = voMutx*chn;
-	printf("%02x:%d:%d\r\n",customCmd->cmd,voMutx,sqlite3Chn);
-	for(i=0;i<voMutx;i++){
-		memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));
-		netCfg.magic=PKG_MAGIC;
-		netCfg.chn=i;
-		netCfg.subwin=voMutx;
+	if(customCmd->cmd != 0xaa){//串口切屏
+		
+		voMutx = (customCmd->cmd&0xff)>>4;
+		chn = customCmd->ch;
+		if(voMutx == 15) voMutx =16;
+		int sqlite3Chn = voMutx*chn;
+		printf("%02x:%d:%d\r\n",customCmd->cmd,voMutx,sqlite3Chn);
+		for(i=0;i<voMutx;i++){
+			memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));
+			netCfg.magic=PKG_MAGIC;
+			netCfg.chn=i;
+			netCfg.subwin=voMutx;
 
-		if(strncmp(env->camConn[i+sqlite3Chn].address,"0.0.0.0",7)==0)
-			netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
-		else
-			sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
-		if(voMutx==1)
-			sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/main/av_stream",env->decType==0?"h264":"h265");
-		else if(voMutx==4){
-			sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/%s/av_stream",env->decType==0?"h264":"h265",env->muxt4==0?"sub":"main");
+			if(strncmp(env->camConn[i+sqlite3Chn].address,"0.0.0.0",7)==0)
+				netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
+			else
+				sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
+			if(voMutx==1)
+				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/main/av_stream",env->decType==0?"h264":"h265");
+			else if(voMutx==4){
+				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/%s/av_stream",env->decType==0?"h264":"h265",env->muxt4==0?"sub":"main");
+			}
+			else
+				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
+			sprintf(netCfg.mediaInfo.camUser,"admin");
+			sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
+			netCfg.mediaInfo.camPort =554;
+
+			printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);
+			//memset(netCfg.mediaInfo.camAddress,0,32);
+
+			c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));
 		}
-		else
-			sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
-		sprintf(netCfg.mediaInfo.camUser,"admin");
-		sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
-		netCfg.mediaInfo.camPort =554;
+	}
+	if(customCmd->cmd == 0xaa){//左右联动切屏
+		chn = customCmd->stop;
+		sprintf(cams,"%s",env->plcCams[chn-1]);
 
-		printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);
-		//memset(netCfg.mediaInfo.camAddress,0,32);
+		i=0;
+		for (p = strtok(cams, sep);p != NULL;p=strtok(NULL,sep)) {
+			if(atoi(p)>0 && atoi(p)<17)
+				chns[i]=atoi(p);
+			else chns[i] = 1;
+			i++;
+		}
+		allChns=i;
+		printf("plc_chn:%d\r\n",i);
+		switch (i) {
+			case 1 :voMutx=1;break;
+			case 2 :voMutx=2;break;
+			case 3:
+			case 4 :voMutx=4;break;
+			case 5 :
+			case 6 :voMutx=6;break;
+			case 7 :
+			case 8 :
+			case 9 :
+					voMutx=9;break;
+			case 10 :
+			case 11 :
+			case 12 :
+			case 13 :
+			case 14 :
+			case 15 :
+			case 16 :
+					voMutx=16;break;
+			default:voMutx=1;break;
+		}
+		for(i=0;i<allChns;i++){
+			memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));
+			netCfg.magic=PKG_MAGIC;
+			netCfg.chn=i;
+			netCfg.subwin=voMutx;
 
-		c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));
+			if(strncmp(env->camConn[chns[i]-1].address,"0.0.0.0",7)==0)
+				netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
+			else
+				sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[chns[i]-1].address);
+			if(voMutx==1 || voMutx ==4)
+				sprintf(netCfg.mediaInfo.camUrl,"/h264/ch1/main/av_stream");
+			else
+				sprintf(netCfg.mediaInfo.camUrl,"/h264/ch1/sub/av_stream");
+			sprintf(netCfg.mediaInfo.camUser,"admin");
+			sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
+			netCfg.mediaInfo.camPort =554;
+
+			printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);
+			//memset(netCfg.mediaInfo.camAddress,0,32);
+			c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));
+		}
 	}
 	return 0;
 }

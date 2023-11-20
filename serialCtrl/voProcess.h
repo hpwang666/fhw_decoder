@@ -11,5 +11,5 @@
 #include "env.h"
 int rtsp_connect_handler(event_t ev);
 int rtsp_reconnect_peer(event_t ev);
-int transVo(conn_t , custom_t );
+int transVo(loop_ev,conn_t , custom_t );
 #endif

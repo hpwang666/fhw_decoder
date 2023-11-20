@@ -25,6 +25,7 @@ char* inet_ntoa_pad(unsigned long addr);
 
 int verify_ip_address(char* src );
 int verify_plc_ctrl(char* src );
+int verify_num(char* src );
 
 uint16_t checksum(unsigned char * src, unsigned int len);		/* Calculate checksum of a stream */
 
