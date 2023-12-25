@@ -10,14 +10,14 @@ static int plc_connect_handler(event_t ev);
 static int plc_reconnect_peer(event_t ev);
 uint16_t check_crc(uint8_t* pbuffer, int length);
 		
-//这里只读两个字  那么报文如下
-//00 03 04 00 01 00 01 crc0 crc1
 int plc_read_handle(event_t ev)
 {
 	int r;
 	int cmd;	
 	struct custom_st custom;
 	static int zoomCmd=-1;
+	int tempHeight;
+	uint16_t height_H;
 	static int voCmd=-1;
 	conn_t c = (conn_t)ev->data;
 	loop_ev env = (loop_ev)c->data;
@@ -44,11 +44,14 @@ int plc_read_handle(event_t ev)
 			buf->tail += r;
 			
 			printf("recv>>%d\n",r);
-			if(r==9){
+
+			//00 03 06 00 00 00 00 01 4d 22 33
+			if(r==11){
 				if( buf->head[6]^voCmd){
 					voCmd=buf->head[6];
 					if(voCmd==0) cmd =3;
-					else cmd=voCmd;
+					if(voCmd==0x04) cmd =1;
+					if(voCmd==0x02) cmd =2;
 					if(cmd>0 && cmd<4){
 						custom.ch =0; 
 						custom.cmd = 0xaa;
@@ -56,13 +59,30 @@ int plc_read_handle(event_t ev)
 						queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 					}
 				}
-				if( buf->head[4]^zoomCmd){
-					zoomCmd=buf->head[4];
-					cmd = ((buf->head[4]))/4*10;
+				if(buf->head[7]&0x80){//负数，在地平面之下
+					height_H=(buf->head[7]<<8)&0xff00;
+					tempHeight = 5500+(0xffff-height_H-buf->head[8]);
+				}
+				else{
+					height_H=(buf->head[7]<<8)&0xff00;
+					tempHeight = 5500-(height_H+buf->head[8]);
+				}
+				printf("height0:%d\r\n",tempHeight);
+				tempHeight=(tempHeight/29)&0xff;
+				printf("height1:%d\r\n",tempHeight);
+				if( tempHeight^zoomCmd){
+					zoomCmd=tempHeight;
+					cmd = tempHeight;
 					custom.ch = 0;	
 					custom.cmd = 0xaa;
 					custom.stop =cmd; 
 					queue_push(env->ptzQueue,1,sizeof(struct custom_st),&custom);
+
+					//把画面切换到1通道
+					custom.ch =0; 
+					custom.cmd = 0x1a;
+					custom.stop =0;//这里不需要 
+					queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 				}
 			}
 
@@ -106,7 +126,7 @@ int plc_write_handle(event_t ev)
 	plcBus[2]=(env->r0>>8)&0xff;
 	plcBus[3]=(env->r0)&0xff;
 	plcBus[4]=0x00;
-	plcBus[5]=0x02;//读取多少个字
+	plcBus[5]=0x03;//读取多少个字
 	*(uint16_t*)(plcBus+ 6) = check_crc(plcBus, 6);
 	//printf("I have sent 8 bytes\r\n");
 	n = c->send(c,plcBus,8);

@@ -11,5 +11,6 @@ typedef enum {START,STOP} doORnot;
 
 
 int getChnnelInfo(loop_ev ev);
-int getCamName(camConnection camConn);
+int getCamName(loop_ev,camConnection camConn);
+int getPtzStatus(loop_ev ev,camConnection camConn);
 #endif

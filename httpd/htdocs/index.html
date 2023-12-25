@@ -1,122 +1,377 @@
 <!DOCTYPE html>
 <html>
-<TITLE>Index</TITLE>
-<meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
+<title>Index</title>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
 <head>
-<script>
+	<script>
+		function $(id) {
+			return document.getElementById(id);
+		}
+		function postConfigCallback(o) {
+			if ($("txtversion")) $("txtversion").innerText = o["version"];
 
-function $(id) { return document.getElementById(id); };
-function postConfigCallback(o) {
-	if ($('txtversion'))  $('txtversion').innerText = o['version'];
+			for (var i = 1; i <= 17; i++) {
+				if ($("txtstream" + i)) $("txtstream" + i).value = o["stream" + i];
+			}
+			if ($("txtleft")) $("txtleft").value = o["left"];
+			if ($("txtright")) $("txtright").value = o["right"];
+			if ($("txtstop")) $("txtstop").value = o["stop"];
+			$("in3" + o.muxt4).checked = true;
+			$("in4" + o.dec).checked = true;
 
-	for(var i=1;i<=17;i++){
-		if ($('txtstream'+i))  $('txtstream'+i).value = o['stream'+i];}
-	if ($('txtleft'))  $('txtleft').value = o['left'];
-	if ($('txtright'))  $('txtright').value = o['right'];
-	if ($('txtstop'))  $('txtstop').value = o['stop'];
-	$('in3'+o.muxt4).checked=true;
-	$('in4'+o.dec).checked=true;
+			if ($("txtevent_chn")) $("txtevent_chn").value = o["event_chn"];
+			if ($("txtupload_port")) $("txtupload_port").value = o["upload_port"];
+			if ($("txtevent_type")) $("txtevent_type").value = o["event_type"];
 
-	if ($('txtevent_chn'))  $('txtevent_chn').value = o['event_chn'];
-	if ($('txtupload_port'))  $('txtupload_port').value = o['upload_port'];
-	if ($('txtevent_type'))  $('txtevent_type').value = o['event_type'];
-	
-	if ($('txtplc_addr'))  $('txtplc_addr').value = o['plc_addr'];
-	if ($('txtplc_port'))  $('txtplc_port').value = o['plc_port'];
-	if ($('plc_offset0'))  $('plc_offset0').value = o['r0'];
-	if ($('plc_offset1'))  $('plc_offset1').value = o['r1'];
-	if ($('txtprotocol'))  $('txtprotocol').value = o['protocol'];
-
-
-};
-</script>
-
-
+			if ($("txtplc_addr")) $("txtplc_addr").value = o["plc_addr"];
+			if ($("txtplc_port")) $("txtplc_port").value = o["plc_port"];
+			if ($("plc_offset0")) $("plc_offset0").value = o["r0"];
+			if ($("plc_offset1")) $("plc_offset1").value = o["r1"];
+			if ($("txtprotocol")) $("txtprotocol").value = o["protocol"];
+		}
+	</script>
 </head>
-<BODY>
-<P>Welcome to FHJT webserver.
-</br>
-</P>
-<span id='txtversion' name='version'></span>
-</br>
-</br>
-</br>
-<p><input type='password' class='passw' id='access' name='access'size='10'value=''/><button onClick="login()">login</button></p>
-<FORM ACTION="geshihua.cgi" METHOD="POST">
-<p><label >ch 1:</label><input type='text' id='txtstream1' name='stream1'size='16' /><label >ch 9:</label><input type='text' id='txtstream9' name='stream9'size='16' /></p>
-<p><label >ch 2:</label><input type='text' id='txtstream2' name='stream2'size='16' /><label >ch 10:</label><input type='text' id='txtstream10' name='stream10'size='16' /></p>
-<p><label >ch 3:</label><input type='text' id='txtstream3' name='stream3'size='16' /><label >ch 11:</label><input type='text' id='txtstream11' name='stream11'size='16' /></p>
-<p><label >ch 4:</label><input type='text' id='txtstream4' name='stream4'size='16' /><label >ch 12:</label><input type='text' id='txtstream12' name='stream12'size='16' /></p>
-<p><label >ch 5:</label><input type='text' id='txtstream5' name='stream5'size='16' /><label >ch 13:</label><input type='text' id='txtstream13' name='stream13'size='16' /></p>
-<p><label >ch 6:</label><input type='text' id='txtstream6' name='stream6'size='16' /><label >ch 14:</label><input type='text' id='txtstream14' name='stream14'size='16' /></p>
-<p><label >ch 7:</label><input type='text' id='txtstream7' name='stream7'size='16' /><label >ch 15:</label><input type='text' id='txtstream15' name='stream15'size='16' /></p>
-<p><label >ch 8:</label><input type='text' id='txtstream8' name='stream8'size='16' /><label >ch 16:</label><input type='text' id='txtstream16' name='stream16'size='16' /></p>
-<p><label >LEFT</label><input type='text' id='txtleft' name='left'size='16' /></p>
-<p><label >RIGHT</label><input type='text' id='txtright' name='right'size='16' /></p>
-<p><label >STOP</label><input type='text' id='txtstop' name='stop'size='32' /></p>
-<p>Mutx4_2K: <input type='radio' id='in30' name='muxt4' value='0'/>SUB<input type='radio' id='in31' name='muxt4' value='1'/>MAIN</p> 
-<p>dec_type: <input type='radio' id='in40' name='dec' value='0'/>H264<input type='radio' id='in41' name='dec' value='1'/>H265</p>
 
-</br>
-</br>
-<p>
-	<label >PLC地址:</label><input type='text' id='txtplc_addr' name='plc_addr'size='16' />
-	<label >端口(8000-20000):</label><input type='text' id='txtplc_port' name='plc_port'size='8' />
-	<label style="width:100px">行走寄存器(<50000):</label><input type='text' id='plc_offset0' name='r0'size='8' />
-	<label style="width:100px">变幅寄存器(<50000):</label><input type='text' id='plc_offset1' name='r1'size='8' />
-	<label >协议簇:</label>
-	<select id='txtprotocol' name='protocol'>
-		<option value="0">不启用</option>
-		<option value="1">modbus</option>
-		<option value="2">memobus</option>
-	</select>
-</p>
+<body style="padding: 0px; margin: auto">
+	<div style="
+        width: 100vw;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      ">
+		<h1 style="
+          width: 100%;
+          max-width: 960px;
+          text-align: center;
+          padding: 0px;
+          margin: 0px;
+        ">
+			Welcome to FHJT webserver
+		</h1>
+		<span id="txtversion" name="version"></span>
+		<fieldset>
+			<legend>Login</legend>
+			<div style="align-self: self-center">
+				<input type="password" class="passw" id="access" name="access" size="10" value="" /><button
+					onClick="login()">login</button>
 
-<p>
-	<label style="width:120px">抓拍机触发通道:</label><input type='text' id='txtevent_chn' name='event_chn'size='8' />
-	<label >触发端口(8000-20000):</label><input type='text' id='txtupload_port' name='upload_port'size='8' />
-	<select id='txtevent_type' name='event_type'>
-		<option value="0">人脸抓拍</option>
-		<option value="1">人体抓拍</option>
-		<option value="2">机动车</option>
-	</select>
-</p>
+			<button onClick="reboot()" style="padding-right:10px">重启</button>
+			</div>
+		</fieldset>
+		<fieldset style="padding-top: 10px;">
+			<legend>Setting</legend>
+			<form action="geshihua.cgi" method="POST" style="
+            max-width: 960px;
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+          ">
+				<div style="
+              min-width: 452px;
+              max-width: 960px;
+              display: flex;
+              flex-direction: row;
+              flex-wrap: wrap;
+              justify-content: space-between;
+            ">
+					<div style="min-width: 451px">
+						<div style="padding: 5px; border: 1px dotted #66b3ff;">
+						<p>
+							<label class="small">ch 1:</label><input type="text" id="txtstream1" name="stream1"
+								size="16" class="s-inputxt" /><label class="small">ch 9:</label><input type="text"
+								id="txtstream9" name="stream9" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">ch 2:</label><input type="text" id="txtstream2" name="stream2"
+								size="16" class="s-inputxt" /><label class="small">ch 10:</label><input type="text"
+								id="txtstream10" name="stream10" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">ch 3:</label><input type="text" id="txtstream3" name="stream3"
+								size="16" class="s-inputxt" /><label class="small">ch 11:</label><input type="text"
+								id="txtstream11" name="stream11" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">ch 4:</label><input type="text" id="txtstream4" name="stream4"
+								size="16" class="s-inputxt" /><label class="small">ch 12:</label><input type="text"
+								id="txtstream12" name="stream12" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">ch 5:</label><input type="text" id="txtstream5" name="stream5"
+								size="16" class="s-inputxt" /><label class="small">ch 13:</label><input type="text"
+								id="txtstream13" name="stream13" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">ch 6:</label><input type="text" id="txtstream6" name="stream6"
+								size="16" class="s-inputxt" /><label class="small">ch 14:</label><input type="text"
+								id="txtstream14" name="stream14" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">ch 7:</label><input type="text" id="txtstream7" name="stream7"
+								size="16" class="s-inputxt" /><label class="small">ch 15:</label><input type="text"
+								id="txtstream15" name="stream15" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">ch 8:</label><input type="text" id="txtstream8" name="stream8"
+								size="16" class="s-inputxt" /><label class="small">ch 16:</label><input type="text"
+								id="txtstream16" name="stream16" size="16" class="s-inputxt" />
+						</p>
+						<p>
+							<label class="small">LEFT:</label><input type="text" id="txtleft" name="left" size="16"
+								class="s-inputxt" /><label class="small">RIGHT:</label><input type="text" id="txtright"
+								name="right" size="16" class="s-inputxt" />
+						</p>
+						<!-- <p><label class="small">RIGHT:</label><input type='text' id='txtright' name='right' size='16' class="s-inputxt"/></p> -->
+						<p>
+							<label class="small">STOP:</label><input type="text" id="txtstop" name="stop" size="32"
+								style="width:250px" />
+						</p>
+						<p>
+							<label class="small" style="width: 100px">Mutx4_2K:</label><input type="radio" id="in30"
+								name="muxt4" value="0" />SUB&nbsp;&nbsp;<input type="radio" id="in31" name="muxt4"
+								value="1" />MAIN
+						</p>
+						<p>
+							<label class="small" style="width: 100px">dec_type:</label><input type="radio" id="in40"
+								name="dec" value="0" />H264<input type="radio" id="in41" name="dec" value="1" />H265
+						</p>
+						</div>
+					</div>
+					<div style="min-width: 451px;" class="mt20">
+						<div style="padding: 0px; border: 1px dotted #66b3ff">
+							<p>
+								<label class="middle">PLC地址</label><span class="mh">:</span><input type="text"
+									id="txtplc_addr" name="plc_addr" class="s-inputxt" />
+							</p>
+							<p>
+								<label class="middle">端口(8000-20000)</label><span class="mh">:</span><input type="text"
+									id="txtplc_port" name="plc_port" class="s-inputxt" />
+							</p>
+							<p>
+								<label class="middle">行走寄存器(&lt;50000)</label><span class="mh">:</span><input
+									type="text" id="plc_offset0" name="r0" class="s-inputxt" />
+							</p>
+							<p>
+								<label class="middle">变幅寄存器(&lt;50000)</label><span class="mh">:</span><input
+									type="text" id="plc_offset1" name="r1" class="s-inputxt" />
+							</p>
+							<p>
+								<label class="middle">协议簇</label><span class="mh">:</span>
+								<select id="txtprotocol" name="protocol" class="s-inputxt"
+									style="width: 148px; margin-left: -5px; height: 21px">
+									<option value="0">不启用</option>
+									<option value="1">modbus</option>
+									<option value="2">memobus</option>
+								</select>
+							</p>
+						</div>
 
-<INPUT TYPE="submit">
-</FORM>
-<form id='frmFileUp' method='POST' action='fileup.cgi' enctype='multipart/form-data'>
-<p><label >Firmware update</label></p>
-<p><input type='file' id='file' name='file' /></p>
-<p><input type='submit' id='upbtn' value='Upload' disabled='disabled' /></p>
+						<div style="padding: 0px; border: 1px dotted #66b3ff;" class="mt40 mt20">
+							<p>
+								<label class="middle">抓拍机触发通道</label><span class="mh">:</span><input type="text"
+									id="txtevent_chn" name="event_chn" class="s-inputxt" />
+							</p>
+							<p>
+								<label class="middle">触发端口(8000-20000)</label><span class="mh">:</span><input
+									type="text" id="txtupload_port" name="upload_port" class="s-inputxt" />
+							</p>
+							<p>
+								<label class="middle">抓拍方式</label><span class="mh">:</span>
+								<select id="txtevent_type" name="event_type"
+									style="width: 148px; margin-left: -5px; height: 21px">
+									<option value="0">人脸抓拍</option>
+									<option value="1">人体抓拍</option>
+									<option value="2">机动车</option>
+								</select>
+							</p>
+						</div>
+						<p style="text-align: right;" class="mt40 mt20">
+							<input type="submit" class="btn" />
+						</p>
+					</div>
+				</div>
+			</form>
+		</fieldset>
+		<fieldset>
+			<legend>Firmware update</legend>
+			<form id="frmFileUp" method="POST" action="fileup.cgi" enctype="multipart/form-data">
+				<p style="padding: 0px; margin: 0px">
+					<input type="file" id="file" name="file" size="16" style="width: 268px" />
+					<input type="submit" id="upbtn" value="Upload" disabled="disabled" style="width: 148px" />
+				</p>
+			</form>
+		</fieldset>
+	</div>
+	<script type="text/javascript" src="post_config.js"></script>
+	<script>
+		function login() {
+			var access = $("access").value;
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.onreadystatechange = function () {
+				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+					var msg = xmlhttp.responseText;
+					if (msg != 0) {
+						alert("password error");
+					} else {
+						$("upbtn").removeAttribute("disabled");
+					}
+				}
+			};
+			xmlhttp.open("POST", "/login.cgi", true);
+			xmlhttp.send("input=" + access);
+		}
+		function reboot() {
+			var xmlhttp = new XMLHttpRequest();
+			xmlhttp.onreadystatechange = function () {
+				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+						alert("重启中...");
+				}
+			};
+			xmlhttp.open("POST", "/reboot.cgi", true);
+			xmlhttp.send("input=");
 
-</form>
-<script type="text/javascript" src="post_config.js"></script>
-<script>
-function login(){
-	var access =$('access').value;
-	var xmlhttp=new XMLHttpRequest();
-	xmlhttp.onreadystatechange=function()
-	{if (xmlhttp.readyState==4 && xmlhttp.status==200){
-		var msg = xmlhttp.responseText;
-		if(msg!=0)
-		{alert("password error");}
-		else{
-				$("upbtn").removeAttribute('disabled');
-			}}};
-		xmlhttp.open("POST","/login.cgi",true);
-		xmlhttp.send("input="+access);
-}
+		}
+	</script>
+	<style type="text/css">
+		body {
+			text-align: left;
+			background-color: #c0deed;
+			font-family: Verdana;
+		}
 
-</script>
-<style type='text/css'>
-body {text-align:left; background-color:#c0deed;font-family:Verdana;}
-#main {margin-right:auto;margin-left:auto;margin-top:30px;}
-label{width:80px;margin-left:20px;}
-#main h3{color:#66b3ff; text-decoration:underline;}
-.column {float:left;margin-right:50px;width: 40%;}
-@media screen and (max-width: 800px) {.column {width: 100%;}}
-.button {width:190px;height:40px;margin:0 50px 15px 0}
-.passw {margin-right:20px;}
-</style>
-</BODY>
-</HTML>
+		#main {
+			margin-right: auto;
+			margin-left: auto;
+			margin-top: 30px;
+		}
+
+		.small {
+			display: inline-block;
+			width: 60px;
+			margin-left: 5px;
+			word-break: break-all;
+			word-wrap: break-word;
+			text-align-last: justify;
+			text-align: justify;
+			text-justify: distribute-all-lines;
+		}
+
+		.s-inputxt {
+			width: 140px;
+		}
+
+		#main h3 {
+			color: #66b3ff;
+			text-decoration: underline;
+		}
+
+		.column {
+			float: left;
+			margin-right: 50px;
+			width: 40%;
+		}
+
+		@media screen and (max-width: 800px) {
+			.column {
+				width: 100%;
+			}
+		}
+
+		.button {
+			width: 190px;
+			height: 40px;
+			margin: 0 50px 15px 0;
+		}
+
+		.passw {
+			margin-right: 20px;
+		}
+
+		.noscrollbar {
+			overflow: -moz-scrollbars-none;
+			/*隐藏滚动条*/
+			-ms-overflow-style: none;
+			/*隐藏滚动条*/
+		}
+
+		.noscrollbar::-webkit-scrollbar {
+			/*隐藏滚动条*/
+			width: 0 !important;
+		}
+
+		@media screen and (min-width: 900px) {
+			fieldset {
+				max-width: 960px;
+			}
+
+			.middle {
+				display: inline-block;
+				width: 268px;
+				margin-left: 5px;
+				text-align: right;
+			}
+
+			.btn {
+				height: 36px;
+				width: 300px;
+				border-radius: 4px;
+				border: 1px solid #345678;
+				align-self: right;
+			}
+			.mt40{
+				margin-top: 45px;
+			}
+		}
+
+		@media screen and (max-width: 899px) {
+			fieldset {
+				max-width: 452px;
+			}
+
+			.middle {
+				display: inline-block;
+				width: 268px;
+				margin-left: 5px;
+				/* word-break: break-all; */
+				/* word-wrap: break-word;
+				text-align-last: justify; */
+				text-align: left;
+				text-justify: distribute-all-lines;
+			}
+
+			.btn {
+				height: 36px;
+				width: 300px;
+				border-radius: 4px;
+				border: 1px solid #345678;
+				align-self: center;
+			}
+			.mt20{
+				margin-top: 20px;
+			}
+		}
+
+		fieldset {
+			width: 100%;
+			border: 1px solid #3190ee;
+			margin-top: 15px;
+		}
+
+		legend {
+			color: #3190ee;
+			font-weight: 900;
+		}
+
+		input[type="submit"],
+		input[type="button"],
+		input[type="file"],
+		button {
+			cursor: pointer;
+		}
+	</style>
+</body>
+
+</html>

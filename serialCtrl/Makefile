@@ -9,7 +9,7 @@ CCFLAGS:=$(CFLAGS)
 LIBPATH := -L../sqlite3/output/lib
 LIBS := -lsqlite3 -lpthread ../connet/connet.a
 INSTALL_DIR=/home/work/nfs/nvr
-
+IMG_DIR=/home/work/fhw/main/user_fhw
 
 ##### End of variables to change
 .PHONY :prepare all clean install
@@ -37,5 +37,6 @@ clean:
 install:
 	$(STRIP) $(TARGET)
 	install $(TARGET) $(INSTALL_DIR)
+	install $(TARGET) $(IMG_DIR)
 
 ##### Any additional, platform-specific rules come here:

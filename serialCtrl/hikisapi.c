@@ -58,8 +58,15 @@ int getChnnelInfo(loop_ev ev)
 		if((camConn->ct) != NULL) {httpclientFree(camConn->ct); camConn->ct=NULL;}
 		if(strncmp(camConn->address,"0.0.0.0",7)!=0){
 			camConn->ct = httpClientCreat(camConn->address,"admin","fhjt12345");
-			if(getCamName(camConn))
+			if(getCamName(ev,camConn))
 				debug("channel[%d]:%s,name:%s\r\n",i,camConn->address,camConn->camName);
+
+			//这里获取通道0的初始ptz位置
+			if(sqlite3_column_int(stmt, 0)==1){
+				
+				//getPtzStatus(ev,camConn);
+				//直接获取r0 r1 寄存器  手动配置
+			}
 		}
 	}
 	sqlite3_finalize(stmt);
@@ -120,10 +127,20 @@ int getChnnelInfo(loop_ev ev)
 		ev->r0=sqlite3_column_int(stmt, 3);
 		ev->r1=sqlite3_column_int(stmt, 4);
 		ev->protocol=sqlite3_column_int(stmt, 5);
+		
+		//这里使用r0 r1 代替初始化ptz位置
+#if 0
+		ev->ch0_elevation=0;
+		ev->ch0_azimuth=0;
+#else
+
+		ev->ch0_elevation=ev->r0;
+		ev->ch0_azimuth=ev->r1;
+#endif
 	}
 
 	printf("%s:%d\r\n",ev->plcAddr,ev->plcPort);
-	printf(" Firmware compile time:%s %s\r\n",__DATE__,__TIME__);
+	printf("Firmware compile time:%s %s\r\n",__DATE__,__TIME__);
 	sprintf(sql,"update controller set version= \"%s %s\" where id = 1",__DATE__,__TIME__);
 	result= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 	if(result!= SQLITE_OK )
@@ -135,7 +152,7 @@ int getChnnelInfo(loop_ev ev)
 }
 
 
-int getCamName(camConnection camConn)
+int getCamName(loop_ev ev,camConnection camConn)
 {
 	char *head=NULL;
 	char *tail=NULL;
@@ -163,8 +180,45 @@ int getCamName(camConnection camConn)
 		tail = strstr(head,"</model>");
 		if((tail - head) < 32)
 			memcpy(camConn->camName,head,(tail - head));
+
+
 		httpClearConn(camConn->ct);
 		return 1;
 	}else 
 		return 0;
+}
+
+
+int getPtzStatus(loop_ev ev,camConnection camConn)
+{
+	
+	char *head=NULL;
+	char *tail=NULL;
+	char temp[32];
+	int ret;
+
+	httpClearConn(camConn->ct);
+	ret=httpClientGet(camConn->ct,"/ISAPI/PTZCtrl/channels/1/status");
+	printf("ret:%d\r\n",ret);
+	if(ret>0){
+		head=strstr(camConn->ct->httpBuf,"<elevation>");
+		if(head){
+			head+=11;
+			tail=strstr(head,"</elevation>");
+			snprintf(temp,tail-head+1,"%s",head);
+			printf("elevation:%s\r\n",temp);
+			ev->ch0_elevation=atoi(temp);
+		}
+
+		head=strstr(camConn->ct->httpBuf,"<azimuth>");
+		if(head){
+			head+=9;
+			tail=strstr(head,"</azimuth>");
+			snprintf(temp,tail-head+1,"%s",head);
+			printf("azimuth:%s\r\n",temp);
+			ev->ch0_azimuth=atoi(temp);
+		}
+	}
+	httpClearConn(camConn->ct);
+	return 1;
 }

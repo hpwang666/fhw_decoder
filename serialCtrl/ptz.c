@@ -32,7 +32,7 @@ int transCmd(loop_ev env, custom_t cmdCmd)
 	len = strlen(camConn->camName);
 	if (len == 0)
 	{
-		if (0 == getCamName(camConn))
+		if (0 == getCamName(env,camConn))
 			return 0;
 	}
 	if(strncmp(camConn->address,"0.0.0.0",7)==0){
@@ -47,10 +47,10 @@ int transCmd(loop_ev env, custom_t cmdCmd)
 			cam0407 = 0;
 		if (cmdCmd->cmd == 0xaa)
 		{ //union ctrl
-			printf("union ctrl \r\n");
+			printf("ch0 auto zoom ctrl \r\n");
 			snprintf(h_con, 1024, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\
-					<PTZData><AbsoluteHigh><elevation> 0 </elevation><azimuth>0</azimuth> \
-					<absoluteZoom>%d</absoluteZoom></AbsoluteHigh></PTZData>",cmdCmd->stop);
+					<PTZData><AbsoluteHigh><elevation>%d</elevation><azimuth>%d</azimuth> \
+					<absoluteZoom>%d</absoluteZoom></AbsoluteHigh></PTZData>",env->ch0_elevation,env->ch0_azimuth,cmdCmd->stop);
 			httpClientPut(camConn->ct,"/ISAPI/PTZCtrl/channels/1/absolute" , h_con);
 			httpClearConn(camConn->ct);
 			return 0;

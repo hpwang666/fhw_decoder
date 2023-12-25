@@ -26,6 +26,8 @@ struct _loop_ev
 {
 	char plcCams[3][64];
 	camConnection camConn;
+	int ch0_elevation;//初始化的时候保存摄像头垂直位置
+	int ch0_azimuth;//初始化的时候保存摄像头水平位置
 	queue_t ptzQueue;
 	queue_t voQueue;
 	int serialFd;

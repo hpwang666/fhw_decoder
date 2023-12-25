@@ -186,6 +186,7 @@ static void do_modify_ip(modifyIP_t modifyIP)
 
 
 static void do_reboot(reboot_t reboot){
+	printf("%s\r\n",reboot->ctx);
 	if(0 != memcmp(reboot->ctx, dev_ctx+4, 8))//只验证后8位
 		return;
 	printf(">>>>>>>>>> reboot \n");

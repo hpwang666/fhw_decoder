@@ -41,13 +41,18 @@ int udp_read_handle(event_t ev)
 				if(buf->head[5]==0x32){//切屏
 						transVoByPLC(c, buf->head[7]-0x30);
 				}
-				if(buf->head[5]==0x31){
+				if(buf->head[5]==0x31){//联动变焦
 					custom.ch=0;
 					custom.cmd=0xaa;
-					custom.stop =((buf->head[6]-0x30)*10+(buf->head[7]-0x30))/4*10;
+					custom.stop =((buf->head[6]-0x30)*10+(buf->head[7]-0x30))*10/4;
 					if(zoom!=custom.stop){
 						zoom=custom.stop;
 						queue_push(env->ptzQueue,0,sizeof(struct custom_st),&custom);
+						//把画面切换到1通道
+						custom.ch =0; 
+						custom.cmd = 0x1a;
+						custom.stop =0;//这里不需要 
+						queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 					}
 				}
 			}

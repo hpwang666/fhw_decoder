@@ -319,7 +319,7 @@ char cgi_test_process(http_request_t http_request)
 */
 void make_cgi_response(uint16_t delay, char* url,char* cgi_response_buf)
 {
-  sprintf(cgi_response_buf,"<html><head><title>Configuration of embedded message server</title><script language=javascript>j=%d;function func(){document.getElementById('delay').innerText=' '+j + ' ';j--;setTimeout('func()',1000);if(j==0)location.href='http://%d.%d.%d.%d/';}</script></head><body onload='func()'>please wait for a while, the module will reboot in<span style='color:red;' id='delay'></span> seconds.</body></html>",delay,url[0],url[1],url[2],url[3]);
+  sprintf(cgi_response_buf,"<html><head><title>Configuration of embedded message server</title><script language=javascript>j=%d;function func(){document.getElementById('delay').innerText=' '+j + ' ';j--;setTimeout('func()',1000);if(j==0)location.href='http://%d.%d.%d.%d/';}</script></head><body onload='func()'>please wait for a while, the module will reboot in<span style='color:red;' id='delay'></span> seconds.</body></html>",delay,1,1,1,1);
   return;
 }
 
@@ -527,6 +527,7 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 	FILE *fp = NULL;
 	char boundary[64];
 	char filename[64];
+	char filePath[64];
 	char sub[10];
 	uint32_t content_len,upload_file_len,rx_len=0;
 	uint8_t recv_on = 0;
@@ -644,9 +645,10 @@ uint8_t cgi_fileup_process(conn_t c,http_request_t http_request,uint8_t *http_bu
 				recv_on=0;
 				memcpy(rcvBuf+rx_len,http_buf,upload_file_len-rx_len);
 				if(strlen(filename)){
-					fp = fopen(filename,"wb+");
+					sprintf(filePath,"update\/%s",filename);
+					fp = fopen(filePath,"wb+");
 					if(fp==NULL) {
-						printf("open %s faild\r\n",filename);
+						printf("open %s faild\r\n",filePath);
 						return 1;
 					}
 					fwrite(rcvBuf,upload_file_len,1,fp);
@@ -936,12 +938,12 @@ void proc_http(conn_t c, uint8_t * buf,uint32_t len)
 		case METHOD_POST:									/*POST请求*/
 			mid(http_request->URI, "/", " ", req_name);		/*获取该请求的文件名*/
 			printf("post %s \r\n",req_name);
-			if(strcmp(req_name,"config.cgi")==0)			//post文件体				  	
+			if(strcmp(req_name,"reboot.cgi")==0)			//post文件体				  	
 			{
-				cgi_ipconfig(http_request);							/*将配置信息写进单片机eeprom*/
-				//make_cgi_response(8,(char*)ConfigMsg.lip,tx_buf);	/*生成响应的文本部分js*/        
-				//sprintf((char *)http_response,"%s%d\r\n\r\n%s",RES_HTMLHEAD_OK,strlen(tx_buf),tx_buf);				
+				sprintf((char *)http_response,"%s%d\r\n\r\n%s",RES_HTMLHEAD_OK,strlen(tx_buf),tx_buf);				
 				c->send(c, (uint8_t *)http_response, strlen((char *)http_response));		/*发送http响应*/
+				printf("reboot......\r\n");
+				system("reboot");
 				//disconnect(s);															/*断开socket连接*/				
 				//reboot();//重启。。。
 			}
