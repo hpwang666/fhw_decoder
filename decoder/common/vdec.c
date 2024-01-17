@@ -29,9 +29,11 @@ static VDEC_CHN_ATTR_S stVdecChnAttr[CHNS];
     
     
 	//这里只需要将前4个通道设置成1080P分辨率
-    for(i = 0 ; i < 4; i++) {
-    	astSize[i].u32Width	= 2688;
-	    astSize[i].u32Height = 1520;
+	astSize[0].u32Width	= 3840;
+	astSize[0].u32Height =2160;
+    for(i = 1 ; i < 4; i++) {
+    	astSize[i].u32Width	=1920;
+	    astSize[i].u32Height =1080;
     }
     for(i = 4 ; i < s32ChnNum; i++) {
     	astSize[i].u32Width	= 704;
@@ -245,7 +247,7 @@ FY_VOID	vdec_chnAttr(FY_S32 s32ChnNum,
         }
         else if(PT_H265 == enType)
         {
-            pstVdecChnAttr[i].stVdecVideoAttr.enMode=VIDEO_MODE_STREAM;
+            pstVdecChnAttr[i].stVdecVideoAttr.enMode= VIDEO_MODE_FRAME;
             pstVdecChnAttr[i].stVdecVideoAttr.u32RefFrameNum = 4;
             pstVdecChnAttr[i].stVdecVideoAttr.bTemporalMvpEnable = 1;
         }

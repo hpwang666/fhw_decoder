@@ -32,7 +32,9 @@ FY_S32 decode_h264(int accessable);
 void *_osalLoop(void  *arg);
 static int got_sig_term = 0;
 decEnv_t  decEnv;
-
+#ifdef FILE_RECORD_EN
+	FILE *fp;
+#endif
 int dec_type=0;//0--h264 1-- h265
 
 static void on_sig_term(int sig)
@@ -144,7 +146,9 @@ int main()
 	signal(SIGQUIT, on_sig_term);
 	signal(SIGINT, on_sig_term);
 		
-
+#ifdef FILE_RECORD_EN
+	fp =fopen("./hwp.265","wb");
+#endif
 	init_conn_queue();
 	init_timer();
 	init_epoll();
@@ -203,6 +207,12 @@ int main()
 		stStream.bEndOfStream = HI_TRUE;
 		HI_MPI_VDEC_SendStream(i, &stStream, -1);
 	*/
+#ifdef FILE_RECORD_EN
+	if(fp){
+		printf("close\r\n");
+		fclose(fp);
+	}
+#endif
 	close_conn(lc);
 	free_all_conn();
 	free_timer();

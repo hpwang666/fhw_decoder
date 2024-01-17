@@ -190,7 +190,7 @@ static int connect_server(char *ip, int port)
     {
         if (errno != EINPROGRESS)       /* EINPROGRESS 表示连接正在建立的过程中 */
         {
-            printf("connect error: %s(errno: %d)\n", strerror(errno), errno);
+            printf("connect error0: %s(errno: %d)\n", strerror(errno), errno);
             close(sockfd);
             sockfd = -1;
         }
@@ -211,7 +211,7 @@ static int connect_server(char *ip, int port)
             {
                 case -1:        /* select错误 */
                 {
-                    printf("connect error: %s(errno: %d)\n", strerror(errno), errno);
+                    printf("connect error1: %s(errno: %d)\n", strerror(errno), errno);
                     close(sockfd);
                     sockfd = -1;
                     break;
@@ -231,7 +231,7 @@ static int connect_server(char *ip, int port)
                     getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *)&error, &optLen);       /* 通过 getsockopt 替代 FD_ISSET 判断是否连接 */
                     if (error != 0)
                     {
-                        printf("connect error: %s(errno: %d)\n", strerror(errno), errno);
+                        printf("connect error2: %s(errno: %d)\n", strerror(errno), errno);
                         close(sockfd);
                         sockfd = -1;
                     }
@@ -269,7 +269,7 @@ int httpClientGet(httpclient_t ct, char *uri)
 	res = connect_server(ct->auth->serverIP,80);
 	if (res == -1)
 	{
-		printf("failed when connect\r\n");
+		printf("failed0 when connect\r\n");
 		ct->httpST = connect_NONE;
 		httpClearConn(ct);
 		return -1;
@@ -314,6 +314,11 @@ int httpClientGet(httpclient_t ct, char *uri)
 			// {
 			// 	close(ct->httpFD);
 			// }
+			address.sin_family = AF_INET;
+			address.sin_addr.s_addr = inet_addr(ct->auth->serverIP); //inet_addr()完成地址格式转换
+			address.sin_port = htons(80);							 //端口
+			len = sizeof(address);
+
 			ct->httpFD = socket(AF_INET, SOCK_STREAM, 0);
 			len = sizeof(address);
 			res = connect(ct->httpFD, (struct sockaddr *)&address, len);

@@ -210,7 +210,7 @@ static int rtsp_read_handle(event_t ev)
 		return AIO_ERR;
     } 
 	if(rc->success)//避免密码错误发生反复请求
-		add_timer(c->read, 1000);
+		add_timer(c->read, 3000);
 	
 	buf_extend(buf, 4096);
 	r = c->recv(c,buf->tail,4096);
@@ -452,11 +452,10 @@ static int send_play(rtspClient_t rc)
 {
 	str_t opt;
 	conn_t c=rc->conn;
-	str_t_ndup(rc->pool,opt,256);
-	str_t_append(opt,"PLAY rtsp://",12);
-	str_t_append(opt,c->peer_ip,strlen(c->peer_ip));
+	str_t_ndup(rc->pool,opt,512);
+	str_t_append(opt,"PLAY ",5);
+	str_t_cat(opt,rc->sess->control);
 
-	str_t_cat(opt,rc->sess->url);
 	str_t_append(opt," RTSP/1.0\r\n",11);
 	
 	rc->cseq++;
@@ -465,7 +464,10 @@ static int send_play(rtspClient_t rc)
 	str_t_append(opt,"Session: ",9);
 	str_t_cat(opt,rc->sess->session);
 	str_t_append(opt,"\r\n",2);
-	str_t_append(opt,"Range: npt=0.000-\r\n\r\n",21);
+	str_t_append(opt,"Range: npt=0.000-\r\n",19);
+	str_t_append(opt,"Authorization: ",15);
+	str_t_cat(opt,rc->sess->auth);
+	str_t_append(opt,"\r\n\r\n",4);
 	
 	rc->do_next =NULL;
 	rc->success = 1;
@@ -527,6 +529,7 @@ static RTSP_TYPE get_resp_len(buf_t buf, size_t *PkgLen)
 		int len = (data[2] & 0xFF) << 8 | (data[3] & 0xFF);
 		if(size >=(len + 4) ){
 			*PkgLen = len + 4;
+			//printf("bin type: %02x \r\n",data[4]&0x3f);
 			//printf("bin type: %02x \r\n",data[5]&0x7f);
 			if((data[5]&0x7f)!=96)
 				return RTSP_NO_H264;//h265也是96，这个表示视频
@@ -578,6 +581,7 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 	char *head,*tail;
 	char ppsB64[128];
 	char spsB64[128];
+	char vpsB64[128];
 	int decodeLen=0;
 	head =(char *)str_nstr(data,"RTSP/1.0 ",len);
 	if(!head) return RTSPERR;
@@ -678,8 +682,20 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 				printf("get sps  pps \r\n");
 			}
 		}
+		head = (char *)str_nstr((u_char*)data,"sprop-vps",len);
+		if(head){
+			head +=strlen("sprop-vps")+1;
+			tail = (char*)str_nstr((u_char *)head,";",128);
+			if(tail){
+				memcpy( vpsB64,head,tail-head);
+				str_t_ndup(rc->pool,rc->sess->vps,128);
+				decodeLen=b64_decode_ex((u_char *)rc->sess->vps->data+16,vpsB64,strlen(vpsB64));
+				rc->sess->vps->len =decodeLen+16; 
+				send_pkg(unixFd, rc->chn,rc->sess->vps->data,rc->sess->vps->len );
+				printf("get vps\r\n");
+			}
+		}
 	}
-
 	head =(char *)str_nstr(data,"Session:",len);
 	if(!head || rc->sess->session) return rep;//已经有了session，返回
 	head+=8; 
@@ -687,7 +703,7 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 		head++;
 	tail = strchr(head,';');
 	if(!tail) return RTSPERR;
-	
+
 	str_t_ndup(rc->pool,rc->sess->session,64);
 	str_t_append(rc->sess->session,head,tail-head);
 	return rep;
@@ -705,13 +721,13 @@ static void generate_auth(rtspClient_t rc, char* cmd)
 		//    md5(md5(<username>:<realm>:<password>):<nonce>:md5(<cmd>:<url>))
 		// or, if "fPasswordIsMD5" is True:
 		//    md5(<password>:<nonce>:md5(<cmd>:<url>))
-		
+
 		md5_a = (md5_t) palloc(rc->pool,sizeof(struct md5_st));
 		md5_b = (md5_t) palloc(rc->pool,sizeof(struct md5_st));
 		md5_c = (md5_t) palloc(rc->pool,sizeof(struct md5_st));
-		
+
 		str_t_ndup(rc->pool,ha1Data,256);
-		
+
 		//md5_a(<username>:<realm>:<password>)
 		str_t_cat(ha1Data,rc->user);
 		str_t_append(ha1Data,":",1);
@@ -720,7 +736,7 @@ static void generate_auth(rtspClient_t rc, char* cmd)
 		str_t_cat(ha1Data,rc->passwd);
 		md5_update(md5_a,ha1Data->data, ha1Data->len);
 		md5_final(md5_a);
-		
+
 		//md5_b(<cmd>:<url>)
 		str_t_zero(ha1Data);
 		str_t_append(ha1Data,cmd,strlen(cmd));

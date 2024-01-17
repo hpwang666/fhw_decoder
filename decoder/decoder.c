@@ -24,8 +24,10 @@ decEnv_t create_dec_chns(void)
 
 	for(i=0;i<CHNS;i++)
 	{
-		if(i<4)
+		if(i==0)
 			decEnv->dec25[i].buf = dec_buf_new(4*1024*1024);
+		else if(i>0 && i<4)
+			decEnv->dec25[i].buf = dec_buf_new(1*1024*1024);
 		else
 			decEnv->dec25[i].buf = dec_buf_new(512*1024);
 		decEnv->dec25[i].PKG_STARTED = 0;

@@ -38,6 +38,7 @@ struct mediaSession_st{
 	str_t auth;
 	str_t control;
 	str_t contentBase;
+	str_t vps;
 	str_t sps;
 	str_t pps;
 };

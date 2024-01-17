@@ -30,6 +30,8 @@ typedef enum{PKG_BAD=-1,PKG_MIN=0,PKG_TXT=1} PKG_TYPE;
 #define CHNS (VDEC_CHN_NUM_16)
 
 
+#define FILE_RECORD_EN
+#undef FILE_RECORD_EN
 extern decEnv_t  decEnv;
 struct decoder_st{
 	int 	id;
@@ -40,8 +42,6 @@ struct decoder_st{
 	dec_buf_t 	buf;
 	//rtpPkg_t   rtpPkgList;
 	pthread_mutex_t decLock;
-	unsigned EN_PPS:1;//
-	unsigned EN_SPS:1;//用来标志 SPS PPS 只需要传输一次
 	unsigned PKG_STARTED:1;			//BUFER 是否接收到了  包头
 	unsigned err:1;  				//表示当前画面为无视频状态，当有视频流来的时候，应该清除该标志
 	unsigned startRcv:1;			//表示开始接收码流

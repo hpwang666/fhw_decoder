@@ -39,7 +39,7 @@ int transCmd(loop_ev env, custom_t cmdCmd)
 		return 0;
 	}
 
-	if ((0 == strncmp(camConn->camName, "DS-", 3))||(0 == strncmp(camConn->camName, "iDS", 3)))
+	if ((0 == strncmp(camConn->camName, "DS-", 3))||(0 == strncmp(camConn->camName, "iDS", 3))||(0 == strncmp(camConn->camName, "UV-", 3)))
 	{
 		if (0 == strncmp(camConn->camName, _camName0, 14))
 			cam0407 = 0;

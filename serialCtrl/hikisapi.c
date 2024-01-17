@@ -129,7 +129,7 @@ int getChnnelInfo(loop_ev ev)
 		ev->protocol=sqlite3_column_int(stmt, 5);
 		
 		//这里使用r0 r1 代替初始化ptz位置
-#if 0
+#if 1
 		ev->ch0_elevation=0;
 		ev->ch0_azimuth=0;
 #else
