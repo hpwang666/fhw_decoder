@@ -182,9 +182,15 @@ int UnpackRTPH264( u_char *bufIN, size_t len, decoder_t dec)
 		*(( int * )(pBufTmp)) = 0x01000000 ; 
 		outLen = len - RTP_HEADLEN + 4 ;
 		dec_buf_append(bufOUT,pBufTmp,outLen);
-		if(7 == nal) bFinishFrame=RTP_SPS;
-		if(8 == nal) bFinishFrame=RTP_PPS;
-		if(1 == nal) bFinishFrame=RTP_PKG;//单包数据
+		switch(nal){
+			case 1: //signel pkg
+			case 7: // sequence parameter set (SPS)
+			case 8: // picture parameter set (PPS)
+				bFinishFrame=RTP_PKG;//单包数据
+				break;
+			default: 
+				bFinishFrame=RTP_PKG;//单包数据
+		}
 	}
 		
 	return bFinishFrame;
