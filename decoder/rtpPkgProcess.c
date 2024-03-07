@@ -42,6 +42,9 @@ void pkgProcess(u_char *rtpPkg,int dec_type)
 					}
 				}							
 				dec_buf_init(decEnv->dec25[rtspChnStatus->id].buf);
+				decEnv->dec25[rtspChnStatus->id].EN_PPS=0;
+				decEnv->dec25[rtspChnStatus->id].EN_SPS=0;
+				decEnv->dec25[rtspChnStatus->id].EN_VPS=0;
 				decEnv->dec25[rtspChnStatus->id].PKG_STARTED=0;
 				decEnv->dec25[rtspChnStatus->id].refused = 0;
 				decEnv->dec25[rtspChnStatus->id].waitIfream = 0;
@@ -96,6 +99,9 @@ void pkgProcess(u_char *rtpPkg,int dec_type)
 				}		
 				FY_MPI_VDEC_ResetChn(i);
 				dec_buf_init(decEnv->dec25[i].buf);
+				decEnv->dec25[i].EN_PPS=0;
+				decEnv->dec25[i].EN_SPS=0;
+				decEnv->dec25[i].EN_VPS=0;
 				decEnv->dec25[i].PKG_STARTED=0;
 				decEnv->dec25[i].refused = 0;
 				decEnv->dec25[i].waitIfream = 0;
@@ -179,6 +185,9 @@ void pkgProcess(u_char *rtpPkg,int dec_type)
 			}
 
 			dec_buf_init(decEnv->dec25[rtspChnStatus->id].buf);
+			decEnv->dec25[rtspChnStatus->id].EN_PPS=0;
+			decEnv->dec25[rtspChnStatus->id].EN_SPS=0;
+			decEnv->dec25[rtspChnStatus->id].EN_VPS=0;
 			decEnv->dec25[rtspChnStatus->id].PKG_STARTED=0;
 			decEnv->dec25[rtspChnStatus->id].refused = 0;
 			decEnv->dec25[rtspChnStatus->id].waitIfream = 0;
