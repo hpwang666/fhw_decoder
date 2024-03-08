@@ -32,7 +32,7 @@ int do_decode(decoder_t dec,int chn,int rtpType)
 	}
 	//	printf("size:%d\r\n",dec->buf->size);
 #ifdef FILE_RECORD_EN
-	if(fileCnt>60){
+	if(fileCnt>100){
 		if(fp){
 			printf("close\r\n");
 			fclose(fp);
@@ -40,11 +40,30 @@ int do_decode(decoder_t dec,int chn,int rtpType)
 		fp=NULL;
 	}
 	else{
-		fwrite(dec->buf->head,1,dec->buf->size,fp);
+		if(dec->EN_SPS==0 ||rtpType != RTP_SPS)
+			fwrite(dec->buf->head,1,dec->buf->size,fp);
 		fflush(fp);
 	}
 #endif
-	if(RTP_P & rtpType){	
+	//以下实际上第二次来PPP的时候并没有删除，而是和后面的I帧一起送给了解码器
+	//如果分开送，就会出现解码延时等问题，很奇怪
+	if((rtpType &RTP_SPS) && (dec->EN_SPS == 0)){//SPS PPS		
+		dec->decStream.u64PTS   =DEC_TIMESTAMP;
+		dec->decStream.pu8Addr =  dec->buf->head;
+		dec->decStream.u32Len  =  dec->buf->size; 
+		dec->decStream.bEndOfFrame  = FY_TRUE;
+		dec->decStream.bEndOfStream = FY_FALSE;  
+		
+		if(dec->refused == 0)	{
+			ret=FY_MPI_VDEC_SendStream(chn, &(dec->decStream), 0);
+			if(ret !=FY_SUCCESS) printf("%d:may be dec is busy：%x\r\n",chn,ret);
+			dec->EN_SPS =1;	
+		}
+		
+		dec_buf_init(dec->buf);
+		dec->PKG_STARTED = 0;
+	}
+	else if(RTP_P & rtpType){	
 		dec->decStream.u64PTS =DEC_TIMESTAMP;//由VO模块进行帧率控制
 		dec->decStream.pu8Addr = dec->buf->head;
 		dec->decStream.u32Len  = dec->buf->size; 
@@ -96,8 +115,6 @@ int do_decode(decoder_t dec,int chn,int rtpType)
 		dec->PKG_STARTED = 0;
 	}	
 	
-	dec_buf_init(dec->buf);
-	dec->PKG_STARTED = 0;
 	return 0;
 }
 /*
@@ -229,7 +246,7 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 		printf("skip \r\n");
 		return 0;
 	}
-	if((*(src +1))&(0x07)==0){
+	if((*(src +1)&(0x07))==0){
 		printf("not good \r\n");
 		return 0;
 	}
@@ -276,13 +293,13 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 		dec_buf_append(bufOUT,pBufTmp,outLen);
 		switch(nal){
 			case 1:
+				bFinishFrame=RTP_PKG;//单包数据
+				break;
 			case 32: // video parameter set (VPS)
 			case 33: // sequence parameter set (SPS)
 			case 34: // picture parameter set (PPS)
-				bFinishFrame=RTP_PKG;//单包数据
-				break;
 			case 39: // supplemental enhancement information (SEI)
-				bFinishFrame=RTP_ERR;//这个包不丢，保存的h265文件无法播放
+				bFinishFrame=RTP_SPS;
 				break;
 			default: // 4.4.1. Single NAL Unit Packets (p24)
 				bFinishFrame=RTP_PKG;//单包数据

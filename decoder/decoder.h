@@ -19,7 +19,8 @@ typedef struct rtspChnStatus_st *rtspChnStatus_t;
 typedef struct decEnv_st *decEnv_t; 
 #define PKG_LIST_LEN  (6)
 
-
+#define FILE_RECORD_EN 
+#undef  FILE_RECORD_EN
 typedef enum{PKG_BAD=-1,PKG_MIN=0,PKG_TXT=1} PKG_TYPE;
 
 #define  VDEC_CHN_NUM_25 (25)

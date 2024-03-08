@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,7 @@
 #include "httpclient.h"
 
 static int connect_server(char *ip, int port);
+int recv_noblock(httpclient_t ct);
 int httpParse(httpclient_t ct)
 {
 	char *_nonce = strstr(ct->httpBuf, "nonce");
@@ -103,77 +105,79 @@ void mid(const char *src, const char *s1, const char *s2, char *sub)
 	strncpy(sub, sub1, n);
 	sub[n] = 0;
 }
-ssize_t super_recv(httpclient_t ct)
+int recv_noblock(httpclient_t ct)
 {
-	int res, len, i;
-	char lastdata[2048];
-	char len_str[10];
-	const char *sub1;
-	memset(ct->httpBuf, 0, 4096);
-	for (i = 0; i < 5; i++)
+	int ret=-1;
+	fd_set read_fds;
+	struct timeval timeout;
+	int available=0;
+	int recv_len =0;
+	int fds =0;
+	if(ct->httpFD ==-1)
+		return -1;
+
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 500 * 1000;       /* 连接超时时长：100ms */
+
+	FD_ZERO(&read_fds);
+	FD_SET(ct->httpFD, &read_fds);
+
+	ret = select(ct->httpFD + 1, &read_fds,NULL, NULL, &timeout);
+	switch (ret)
 	{
-		memset(lastdata, '\0', 2048);
-		memset(len_str, '\0', 10);
-		res = recv(ct->httpFD, lastdata, 2048, 0);
-		// printf("i=%d,1:%s\n",i,lastdata);
-		if (res > 0)
-		{
-			strcat(ct->httpBuf, lastdata);
-			// printf("i=%d,2:%s\n",i,ct->httpBuf);
-		}
-		else
-		{
-			res = -1;
-			break;
-		}
-		char *_http = strstr(ct->httpBuf, "HTTP/1.1");
-		char *_Content = strstr(ct->httpBuf, "Content-Length:");
-		char *_content = strstr(ct->httpBuf, "content-length:");
-		char *_CONTENT = strstr(ct->httpBuf, "CONTENT-LENGTH:");
-		if (_http != NULL && (_content != NULL || _Content != NULL || _CONTENT != NULL))
-		{
-			if (_Content != NULL)
-				mid(ct->httpBuf, "Content-Length: ", "\r\n", len_str);
-			else if (_content != NULL)
-				mid(ct->httpBuf, "content-length: ", "\r\n", len_str);
-			else
-				mid(ct->httpBuf, "CONTENT-LENGTH: ", "\r\n", len_str);
-			// printf("i=%d,3:%s\n",i,len_str);
-			len = atoi(len_str);
-			if (len == 0)
-				break;
-			else
+		case -1:        /* select错误 */
 			{
-				sub1 = strstr(ct->httpBuf, "\r\n\r\n");
-				if (sub1 == NULL)
-					continue;
-				// printf("ctt:%s#",sub1);
-				if (len == (strlen(sub1) - 4))
-					break;
+				printf("recv error1: %s(errno: %d)\n", strerror(errno), errno);
+				close(ct->httpFD);
+				ct->httpFD = -1;
+				break;
 			}
-		}
+		case 0:         /* 超时 */
+			{
+				printf("select timeout...\n");
+				close(ct->httpFD);
+				ct->httpFD = -1;
+				break;
+			}
+		default:
+			{
+				for(fds=0;fds <ct->httpFD + 1;fds++){
+					if(FD_ISSET(fds,&read_fds)){
+						if(fds == ct->httpFD){
+							if (ioctl(ct->httpFD, FIONREAD,&available) == -1) {
+								printf("error when ioctl recv\r\n");
+							}
+							else {
+								recv_len= recv(ct->httpFD, ct->httpBuf, 4096, 0);	
+							}
+						}
+					}
+				}
+
+				break;
+			}
 	}
-	// printf("i=%d",i);
-	return res;
+	return recv_len>0?recv_len:-1;
 }
 
 
 
 static int connect_server(char *ip, int port)
 {
-    int sockfd = -1;
-    struct sockaddr_in servaddr;
-    int flags = 0;
+	int sockfd = -1;
+	struct sockaddr_in servaddr;
+	int flags = 0;
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM , 0)) < 0)
-    {
-        printf("create socket error: %s(errno: %d)\n", strerror(errno), errno);
-        return sockfd;
-    }
+	int fds =0;
+	if ((sockfd = socket(AF_INET, SOCK_STREAM , 0)) < 0)
+	{
+		printf("create socket error: %s(errno: %d)\n", strerror(errno), errno);
+		return sockfd;
+	}
 
-    memset(&servaddr, 0, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(port);
+	memset(&servaddr, 0, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(port);
     if (inet_pton(AF_INET, ip, &servaddr.sin_addr) <= 0)
     {
         printf("inet_pton error for %s\n", ip);
@@ -201,12 +205,12 @@ static int connect_server(char *ip, int port)
             struct timeval timeout;
             
             timeout.tv_sec = 0;
-	        timeout.tv_usec = 300 * 1000;       /* 连接超时时长：100ms */
+	        timeout.tv_usec = 200 * 1000;       /* 连接超时时长：100ms */
 
             FD_ZERO(&write_fds);
             FD_SET(sockfd, &write_fds);
   
-            ret = select(sockfd + 1, NULL, &write_fds, NULL, &timeout);
+            ret = select(sockfd + 1,NULL,&write_fds, NULL, &timeout);
             switch (ret)
             {
                 case -1:        /* select错误 */
@@ -228,32 +232,39 @@ static int connect_server(char *ip, int port)
                     int error = -1;
                     socklen_t optLen = sizeof(socklen_t);
                     
-                    getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *)&error, &optLen);       /* 通过 getsockopt 替代 FD_ISSET 判断是否连接 */
-                    if (error != 0)
-                    {
-                        printf("connect error2: %s(errno: %d)\n", strerror(errno), errno);
-                        close(sockfd);
-                        sockfd = -1;
-                    }
-                    
-                    break;
-                }
-            }
-        }
-    }
+					for(fds=0;fds <sockfd+ 1;fds++){
+						if(FD_ISSET(fds,&write_fds)){
+							if(fds == sockfd){
+								getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *)&error, &optLen);       /* 通过 getsockopt 替代 FD_ISSET 判断是否连接 */
+								if (error != 0)
+								{
+									printf("connect error2: %s(errno: %d)\n", strerror(errno), errno);
+									close(sockfd);
+									sockfd = -1;
+								}
+							}
+						}
+					}
 
+					break;
+				}
+			}
+		}
+	}
+
+#if 0
 	if(sockfd!= -1)
 	{
 		flags = fcntl(sockfd, F_GETFL, 0);
 		flags &=~O_NONBLOCK;
 		fcntl(sockfd, F_SETFL, flags  );
 	}
-    return sockfd;
+#endif
+	return sockfd;
 }
 int httpClientGet(httpclient_t ct, char *uri)
 {
 	int len;
-	struct sockaddr_in address;
 	int res;
 	char code_buf[10];
 	const char *h_header = "User-Agent: FHJT_Http_Client\r\nAccept: */*\r\nConnection: Keep-alive\r\nAccept-Encoding: identity\r\n";
@@ -287,8 +298,8 @@ int httpClientGet(httpclient_t ct, char *uri)
 		httpClearConn(ct);
 		return -1;
 	}
-	// res = recv(ct->httpFD, ct->httpBuf, 4096, 0);//+++++++++++++++++++
-	res = super_recv(ct);
+//	 res = recv(ct->httpFD, ct->httpBuf, 4096, 0);//+++++++++++++++++++
+	res = recv_noblock(ct);
 	if (res <= 0)
 	{
 		httpClearConn(ct);
@@ -308,20 +319,13 @@ int httpClientGet(httpclient_t ct, char *uri)
 		};
 		if (res == 0)
 		{
-			//printf("***closeing\n\r");//---last message
+			printf("***closeing\n\r");//---last message
 			// res = recv(ct->httpFD, ct->httpBuf, 4096, 0);
 			// if (res == 0)
 			// {
 			// 	close(ct->httpFD);
 			// }
-			address.sin_family = AF_INET;
-			address.sin_addr.s_addr = inet_addr(ct->auth->serverIP); //inet_addr()完成地址格式转换
-			address.sin_port = htons(80);							 //端口
-			len = sizeof(address);
-
-			ct->httpFD = socket(AF_INET, SOCK_STREAM, 0);
-			len = sizeof(address);
-			res = connect(ct->httpFD, (struct sockaddr *)&address, len);
+			res = connect_server(ct->auth->serverIP,80);
 			if (res == -1)
 			{
 				perror("failed when connect");
@@ -329,6 +333,7 @@ int httpClientGet(httpclient_t ct, char *uri)
 				httpClearConn(ct);
 				return -1;
 			}
+			ct->httpFD=res;
 		}
 		//if(res == 1) printf("***keep alive\n\r");
 		strcat(ct->header, "Authorization: ");
@@ -342,7 +347,7 @@ int httpClientGet(httpclient_t ct, char *uri)
 			return -1;
 		}
 		// res = recv(ct->httpFD, ct->httpBuf, 4096, 0);//++++++++++++++++++++++++++++++++++
-		res = super_recv(ct);
+		res = recv_noblock(ct);
 		if (res <= 0)
 		{
 			httpClearConn(ct);
@@ -375,7 +380,6 @@ int httpClientGet(httpclient_t ct, char *uri)
 int httpClientPut(httpclient_t ct, char *uri, char *content)
 {
 	int len;
-	struct sockaddr_in address;
 	int res;
 
 	char *h_header = "User-Agent: FHJT_Http_Client\r\nAccept: */*\r\nConnection: Keep-alive\r\nAccept-Encoding: identity\r\n";
@@ -383,19 +387,15 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 
 	/*  Create a socket for the client.  */
 
-	ct->httpFD = socket(AF_INET, SOCK_STREAM, 0);
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = inet_addr(ct->auth->serverIP); //inet_addr()完成地址格式转换
-	address.sin_port = htons(80);							 //端口
-	len = sizeof(address);
-	res = connect(ct->httpFD, (struct sockaddr *)&address, len);
+	res = connect_server(ct->auth->serverIP,80);
 	if (res == -1)
 	{
-		perror("failed when connect");
+		printf("failed0 when connect\r\n");
 		ct->httpST = connect_NONE;
 		httpClearConn(ct);
 		return -1;
 	}
+	ct->httpFD=res;
 	ct->method = strdup("PUT");
 	sprintf(ct->header, "PUT %s HTTP/1.1\r\n", uri);
 	len = strlen(ct->header);
@@ -417,7 +417,7 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 		return -1;
 	}
 
-	res = recv(ct->httpFD, ct->httpBuf, 4096, 0);
+	res = recv_noblock(ct);
 	//printf(">>>%s\n",ct->httpBuf);
 	if (res <= 0)
 	{
@@ -439,9 +439,7 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 		{
 			close(ct->httpFD);
 		}
-		ct->httpFD = socket(AF_INET, SOCK_STREAM, 0);
-		len = sizeof(address);
-		res = connect(ct->httpFD, (struct sockaddr *)&address, len);
+		res = connect_server(ct->auth->serverIP,80);
 		if (res == -1)
 		{
 			perror("failed when connect");
@@ -449,9 +447,9 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 			httpClearConn(ct);
 			return -1;
 		}
+		ct->httpFD=res;
 	}
-
-	if(res == 1) printf("***keep alive\n\r");
+	else printf("***keep alive\n\r");
 	strcat(ct->header, "Authorization: ");
 	strcat(ct->header, ct->httpBuf);
 	strcat(ct->header, "\r\n");
@@ -464,8 +462,7 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 		return -1;
 	}
 
-	res = recv(ct->httpFD, ct->httpBuf, 4096, 0);
-	//printf(">>>%s\n",ct->httpBuf);
+	res = recv_noblock(ct);
 	if (res <= 0)
 	{
 		httpClearConn(ct);
