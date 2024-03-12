@@ -3,8 +3,8 @@
 #include <unistd.h>  
 #include <sys/types.h>  
 #include <sys/stat.h>  
-#include <fcntl.h> //ÎÄ¼ş¿ØÖÆ¶¨Òå  
-#include <termios.h>//ÖÕ¶Ë¿ØÖÆ¶¨Òå  
+#include <fcntl.h> //æ–‡ä»¶æ§åˆ¶å®šä¹‰  
+#include <termios.h>//ç»ˆç«¯æ§åˆ¶å®šä¹‰  
 #include <errno.h>  
 #include<sys/ioctl.h>
  
@@ -26,27 +26,31 @@ int initSerial(void)
         perror("open");  
         return -1;  
     }  
-      
-    //´®¿ÚÖ÷ÒªÉèÖÃ½á¹¹Ìåtermios <termios.h>  
+	//tcflush(serial_fd,TCIOFLUSH) ;
+
+
+    //ä¸²å£ä¸»è¦è®¾ç½®ç»“æ„ä½“termios <termios.h>  
     struct termios options;  
     tcgetattr(serial_fd, &options);  
 	//fcntl(serial_fd, F_SETFL, flags | O_BLOCK);
 #if 1
-    options.c_cflag |= (CLOCAL | CREAD);//ÉèÖÃ¿ØÖÆÄ£Ê½×´Ì¬£¬±¾µØÁ¬½Ó£¬½ÓÊÕÊ¹ÄÜ  
-    options.c_cflag &= ~CSIZE;//×Ö·û³¤¶È£¬ÉèÖÃÊı¾İÎ»Ö®Ç°Ò»¶¨ÒªÆÁµôÕâ¸öÎ»  
-    options.c_cflag &= ~CRTSCTS;//ÎŞÓ²¼şÁ÷¿Ø
+    options.c_cflag |= (CLOCAL | CREAD);//è®¾ç½®æ§åˆ¶æ¨¡å¼çŠ¶æ€ï¼Œæœ¬åœ°è¿æ¥ï¼Œæ¥æ”¶ä½¿èƒ½  
+    options.c_cflag &= ~CSIZE;//å­—ç¬¦é•¿åº¦ï¼Œè®¾ç½®æ•°æ®ä½ä¹‹å‰ä¸€å®šè¦å±æ‰è¿™ä¸ªä½  
+    options.c_cflag &= ~CRTSCTS;//æ— ç¡¬ä»¶æµæ§
 
-    options.c_cflag |= CS8;//8Î»Êı¾İ³¤¶È  
-    options.c_cflag &= ~CSTOPB;//1Î»Í£Ö¹Î»  
-    options.c_iflag &= ~PARENB;//|= IGNPAR;//ÎŞÆæÅ¼¼ìÑéÎ»  
+    options.c_cflag |= CS8;//8ä½æ•°æ®é•¿åº¦  
+    options.c_cflag &= ~CSTOPB;//1ä½åœæ­¢ä½  
+    options.c_iflag &= ~PARENB;//|= IGNPAR;//æ— å¥‡å¶æ£€éªŒä½  
 	options.c_lflag  &= ~(ICANON | ECHO | ECHOE | ISIG);  // 0 /*Input*/
 	options.c_oflag  &= ~OPOST;   /*Output*/              // 0
 	cfsetispeed(&options, B9600);
-    cfsetospeed(&options, B9600);//ÉèÖÃ²¨ÌØÂÊ  
+    cfsetospeed(&options, B9600);//è®¾ç½®æ³¢ç‰¹ç‡  
       
-    /**3. ÉèÖÃĞÂÊôĞÔ£¬TCSANOW£ºËùÓĞ¸Ä±äÁ¢¼´ÉúĞ§*/  
-    tcflush(serial_fd, TCIFLUSH);//Òç³öÊı¾İ¿ÉÒÔ½ÓÊÕ£¬µ«²»¶Á  
+    /**3. è®¾ç½®æ–°å±æ€§ï¼ŒTCSANOWï¼šæ‰€æœ‰æ”¹å˜ç«‹å³ç”Ÿæ•ˆ*/  
+    //tcflush(serial_fd, TCIFLUSH);//æº¢å‡ºæ•°æ®å¯ä»¥æ¥æ”¶ï¼Œä½†ä¸è¯»  
     tcsetattr(serial_fd, TCSANOW, &options);  
+
+
 #endif      
     return serial_fd;  
 }  
@@ -76,13 +80,17 @@ int serialRecv(int serial_fd,char *data)
     FD_ZERO(&fs_read);  
     FD_SET(serial_fd, &fs_read);  
     timeout.tv_sec = 2; 
-	timeout.tv_usec = 0;//Õâ¸ö²»ÄÜÊ¡Å¶
+	timeout.tv_usec = 0;//è¿™ä¸ªä¸èƒ½çœå“¦
 	
 	select(serial_fd+1, &fs_read, NULL, NULL, &timeout);  
 	if (FD_ISSET(serial_fd, &fs_read)) 
 	{  
 		ioctl(serial_fd,FIONREAD,&len);
-		if(len != 4) return -1;
+		if(len != 4) {
+			printf("err read len\r\n");
+			read(serial_fd, data, len);
+			return -1;
+		}
 		len = read(serial_fd, data, 4);
 		debug("len[%d]:%02x %02x %02x %02x\n\r",len,data[0],data[1],data[2],data[3]);
 		crc=data[0]^data[1];

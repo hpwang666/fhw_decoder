@@ -29,7 +29,7 @@ static void on_sig_term(int sig);
 void *_mainLoop(void  *arg)  
 {  
 	loop_ev ev = (loop_ev)arg;
-	char data[4];//we define offset=0 channel,
+	char data[256];//we define offset=0 channel,
 				//offset=1 cmd
 				//offset=2 start/stop
 	struct custom_st custom;
