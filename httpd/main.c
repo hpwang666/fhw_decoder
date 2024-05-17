@@ -25,6 +25,8 @@ int server_read_handle(event_t ev)
 	
 	conn_t c = (conn_t)ev->data;
 	//threadPool_t tp = (threadPool_t)c->data;//lc->ls_arg
+
+	http_request_t http_request = (http_request_t)c->data;
 	buf_t buf=c->readBuf;
 	if (ev->timedout) {//数据读取超时
         printf("READ:read timeout");
@@ -44,9 +46,14 @@ int server_read_handle(event_t ev)
 		else{
 			buf->size += r;
 			buf->tail += r;
-			
-			proc_http(c, buf->head,r);
-			//printf("recv>>%s\n",buf->head);
+			//printf("recv>>%d :%s\n",r,buf->head);
+			if(0==proc_http(c, buf->head,r)){
+				http_request->pkgLen=0;
+				http_request->headLen =0;
+				http_request->contentLen=0;
+				memset(http_request->URI,0,4096);
+				printf(">>>>done\r\n");
+			}
 			buf_consume(buf, r);
 			if(ev->ready){
 				printf("ready\n");

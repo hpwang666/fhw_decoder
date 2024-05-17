@@ -72,6 +72,31 @@ int getChnnelInfo(loop_ev ev)
 	sqlite3_finalize(stmt);
 
 
+	sprintf(sql,"select * from event");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d event_chn: %d,upload_port:%d ,event_type:%d hik_p:%d hik_t:%d \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_int(stmt, 3),\
+				sqlite3_column_int(stmt, 4),\
+				sqlite3_column_int(stmt, 5));
+
+
+		ev->event_chn =sqlite3_column_int(stmt, 1);
+		ev->upload_port = sqlite3_column_int(stmt, 2);
+		ev->event_type  = sqlite3_column_int(stmt, 3);
+		ev->ch0_azimuth= sqlite3_column_int(stmt, 4);//对应P
+		ev->ch0_elevation= sqlite3_column_int(stmt, 5);//对应T
+	}
+	sqlite3_finalize(stmt);
+
+
 	sprintf(sql,"select * from plc_ctrl");
 	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
 	if(result != SQLITE_OK )
@@ -128,15 +153,6 @@ int getChnnelInfo(loop_ev ev)
 		ev->r1=sqlite3_column_int(stmt, 4);
 		ev->protocol=sqlite3_column_int(stmt, 5);
 		
-		//这里使用r0 r1 代替初始化ptz位置
-#if 1
-		ev->ch0_elevation=0;
-		ev->ch0_azimuth=0;
-#else
-
-		ev->ch0_elevation=ev->r0;
-		ev->ch0_azimuth=ev->r1;
-#endif
 	}
 
 	printf("%s:%d\r\n",ev->plcAddr,ev->plcPort);

@@ -88,7 +88,7 @@ void mid(const char *src, const char *s1, const char *s2, char *sub)
 	char *sub2;
 	int n;
 
-	sub1 = strstr(src, s1);
+	sub1 = strstr((char *)src, s1);
 	if (sub1 == NULL)
 	{
 		sub[0] = 0;
@@ -381,9 +381,10 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 {
 	int len;
 	int res;
+	char code_buf[10];
 
-	char *h_header = "User-Agent: FHJT_Http_Client\r\nAccept: */*\r\nConnection: Keep-alive\r\nAccept-Encoding: identity\r\n";
-	char *h_con_type = "Content-Type: text/xml; charset=\"UTF-8\"\r\n";
+	const char *h_header = "User-Agent: FHJT_Http_Client\r\nAccept: */*\r\nConnection: Keep-alive\r\nAccept-Encoding: identity\r\n";
+	const char *h_con_type = "Content-Type: text/xml; charset=\"UTF-8\"\r\n";
 
 	/*  Create a socket for the client.  */
 
@@ -404,7 +405,7 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 	strcat(ct->header, h_con_type);
 	len = strlen(ct->header);
 	if(content)
-		sprintf(ct->header + len, "Content-Length: %d\r\n", strlen(content));
+		sprintf(ct->header + len, "Content-Length: %d\r\n",(int) strlen(content));
 	strcat(ct->body, "\r\n");
 	if(content)
 		strcat(ct->body, content);
@@ -425,47 +426,64 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 		return -1;
 	}
 
-	res = generate_auth(ct, uri);
-	if (res == -1)
+
+
+	mid(ct->httpBuf, "HTTP/1.1 ", " ", code_buf);
+	if (strcmp(code_buf, "401") == 0)
 	{
-		httpClearConn(ct);
-		return -1;
-	}
-	if (res == 0)
-	{
-		printf("***closeing\n\r");
-		res = recv(ct->httpFD, ct->httpBuf, 4096, 0);
-		if (res == 0)
-		{
-			close(ct->httpFD);
-		}
-		res = connect_server(ct->auth->serverIP,80);
+		
+		res = generate_auth(ct, uri);
 		if (res == -1)
 		{
-			perror("failed when connect");
-			ct->httpST = connect_NONE;
 			httpClearConn(ct);
 			return -1;
 		}
-		ct->httpFD=res;
-	}
-	else printf("***keep alive\n\r");
-	strcat(ct->header, "Authorization: ");
-	strcat(ct->header, ct->httpBuf);
-	strcat(ct->header, "\r\n");
+		if (res == 0)
+		{
+			printf("***closeing\n\r");
+			res = recv(ct->httpFD, ct->httpBuf, 4096, 0);
+			if (res == 0)
+			{
+				close(ct->httpFD);
+			}
+			res = connect_server(ct->auth->serverIP,80);
+			if (res == -1)
+			{
+				perror("failed when connect");
+				ct->httpST = connect_NONE;
+				httpClearConn(ct);
+				return -1;
+			}
+			ct->httpFD=res;
+		}
+		else printf("***keep alive\n\r");
+		strcat(ct->header, "Authorization: ");
+		strcat(ct->header, ct->httpBuf);
+		strcat(ct->header, "\r\n");
 
-	//printf("<<<%s%s",ct->header,ct->body);
-	res = httpSend(ct);
-	if (res < 0)
-	{
-		httpClearConn(ct);
-		return -1;
-	}
+		//printf("<<<%s%s",ct->header,ct->body);
+		res = httpSend(ct);
+		if (res < 0)
+		{
+			httpClearConn(ct);
+			return -1;
+		}
 
-	res = recv_noblock(ct);
-	if (res <= 0)
+		res = recv_noblock(ct);
+		if (res <= 0)
+		{
+			httpClearConn(ct);
+			return -1;
+		}
+	}
+	else if (strcmp(code_buf, "404") == 0)
 	{
-		httpClearConn(ct);
+		printf("page not found\r\n");
+		return -404;
+	}else
+	{
+		if (strcmp(code_buf, "200") != 0)
+			printf("##warning:%s,\r\n##RES:%s\r\n",ct->header,ct->httpBuf);
 		return -1;
 	}
 	return res;

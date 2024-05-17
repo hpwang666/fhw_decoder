@@ -47,7 +47,7 @@ int plc_read_handle(event_t ev)
 
 			//00 03 06 00 00 00 00 01 4d 22 33
 			if(r==11){
-				if( buf->head[6]^voCmd){
+				if( 0/*buf->head[6]^voCmd*/){
 					voCmd=buf->head[6];
 					if(voCmd==0) cmd =3;
 					if(voCmd==0x04) cmd =1;
@@ -59,16 +59,16 @@ int plc_read_handle(event_t ev)
 						queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 					}
 				}
-				if(buf->head[7]&0x80){//负数，在地平面之下
-					height_H=(buf->head[7]<<8)&0xff00;
-					tempHeight = 5500+(0xffff-height_H-buf->head[8]);
+				if(buf->head[3]&0x80){//负数，在地平面之下  3300是地上的高度
+					height_H=(buf->head[3]<<8)&0xff00;
+					tempHeight = 3300+(0xffff-height_H-buf->head[4]);
 				}
 				else{
-					height_H=(buf->head[7]<<8)&0xff00;
-					tempHeight = 5500-(height_H+buf->head[8]);
+					height_H=(buf->head[3]<<8)&0xff00;
+					tempHeight = 3300-(height_H+buf->head[4]);
 				}
 				printf("height0:%d\r\n",tempHeight);
-				tempHeight=(tempHeight/29)&0xff;
+				tempHeight=(tempHeight/99)&0xff;
 				printf("height1:%d\r\n",tempHeight);
 				if( tempHeight^zoomCmd){
 					zoomCmd=tempHeight;
@@ -121,7 +121,7 @@ int plc_write_handle(event_t ev)
 	conn_t c =(conn_t) ev->data;
 	loop_ev env = (loop_ev)c->data;
 	u_char plcBus[32];
-	plcBus[0]=0x00;
+	plcBus[0]=0x04;
 	plcBus[1]=0x03;
 	plcBus[2]=(env->r0>>8)&0xff;
 	plcBus[3]=(env->r0)&0xff;

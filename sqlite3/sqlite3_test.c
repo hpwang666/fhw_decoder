@@ -44,7 +44,11 @@ int main()
 
 #endif
 #if 0
-	result = sqlite3_exec( db, "create table event( ID integer primary key autoincrement, event_chn int,upload_port int,event_type int)", NULL, NULL, &errmsg );
+	result = sqlite3_exec( db, "drop table if exists event", NULL, NULL, &errmsg );
+	if(result != SQLITE_OK ){
+		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	result = sqlite3_exec( db, "create table event( ID integer primary key autoincrement, event_chn int,upload_port int,event_type int,hik_p int,hik_t int)", NULL, NULL, &errmsg );
 
 	if(result != SQLITE_OK )
 
@@ -54,7 +58,7 @@ int main()
 
 
 	//插入一些记录
-	result = sqlite3_exec( db, "insert into event(event_chn,upload_port,event_type) values (12,10002,2)", NULL, 0, &errmsg );
+	result = sqlite3_exec( db, "insert into event(event_chn,upload_port,event_type,hik_p,hik_t) values (12,10002,2,980,1200)", NULL, 0, &errmsg );
 	if(result != SQLITE_OK )
 
 	{
@@ -63,6 +67,7 @@ int main()
 		}
 
 #endif
+
 #if 0
 	result = sqlite3_exec( db, "drop table if exists controller", NULL, NULL, &errmsg );
 
@@ -91,7 +96,11 @@ int main()
 		}
 
 #endif
-#if 0
+#if 1
+	result = sqlite3_exec( db, "drop table if exists camera", NULL, NULL, &errmsg );
+	if(result != SQLITE_OK ){
+		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
 	result = sqlite3_exec( db, "create table camera( ID integer primary key autoincrement, address varchar(128), url varchar(128),h_type int)", NULL, NULL, &errmsg );
 
 	if(result != SQLITE_OK )
@@ -100,10 +109,10 @@ int main()
 		printf( "创建表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 
-	for(i=4;i<17;i++){
+	for(i=1;i<33;i++){
 		
 		//插入一些记录
-		result = sqlite3_exec( db, "insert into camera(address, url,h_type) values ('172.16.10.1','/chn/0/h264/main',0)", NULL, 0, &errmsg );
+		result = sqlite3_exec( db, "insert into camera(address, url,h_type) values ('0.0.0.0','/chn/0/h264/main',0)", NULL, 0, &errmsg );
 		if(result != SQLITE_OK )
 
 		{

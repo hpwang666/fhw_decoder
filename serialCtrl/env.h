@@ -44,7 +44,12 @@ struct _loop_ev
 	int r0;  //寄存器0
 	int r1;  //寄存器1
 	int protocol;  //plc总线协议
-	
+
+	int event_chn;//事件触发通道
+	int upload_port;//事件上传端口
+	int event_type;//事件类型 0--人脸  1--人体   2--机动车  3--火灾
+
+
 	int uart_running;
 	int vo_running;
 	int http_running;

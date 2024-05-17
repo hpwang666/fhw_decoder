@@ -156,6 +156,9 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 		chn = customCmd->ch;
 		if(voMutx == 15) voMutx =16;
 		int sqlite3Chn = voMutx*chn;
+		//这里需要对9-3  里面超过的部分进行限制
+		allChns = voMutx;
+		if(sqlite3Chn==27) allChns = 5;//9-3
 		printf("%02x:%d:%d\r\n",customCmd->cmd,voMutx,sqlite3Chn);
 		for(i=0;i<voMutx;i++){
 			memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));
@@ -163,17 +166,22 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 			netCfg.chn=i;
 			netCfg.subwin=voMutx;
 
-			if(strncmp(env->camConn[i+sqlite3Chn].address,"0.0.0.0",7)==0)
+			if(i>=allChns){
 				netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
-			else
-				sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
-			if(voMutx==1)
-				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/main/av_stream",env->decType==0?"h264":"h265");
-			else if(voMutx==4){
-				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/%s/av_stream",env->decType==0?"h264":"h265",env->muxt4==0?"sub":"main");
 			}
-			else
-				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
+			else{
+				if(strncmp(env->camConn[i+sqlite3Chn].address,"0.0.0.0",7)==0)
+					netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
+				else
+					sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
+				if(voMutx==1)
+					sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/main/av_stream",env->decType==0?"h264":"h265");
+				else if(voMutx==4){
+					sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/%s/av_stream",env->decType==0?"h264":"h265",env->muxt4==0?"sub":"main");
+				}
+				else
+					sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
+			}
 			sprintf(netCfg.mediaInfo.camUser,"admin");
 			sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
 			netCfg.mediaInfo.camPort =554;

@@ -4,14 +4,6 @@
 #include "connet.h"
 #include "util.h"
 
-
-
-
-
-
-
-
-
 /* HTTP Method */
 #define		METHOD_ERR			0				/**< Error Method. */
 #define		METHOD_GET			1				/**< GET Method.   */
@@ -73,6 +65,9 @@ struct http_request_st
   uint8_t	METHOD;													/**< request method(METHOD_GET...). */
   uint8_t	TYPE;													/**< request type(PTYPE_HTML...).   */
   char	URI[MAX_URI_SIZE];										/**< request file name.             */
+  int contentLen;
+  int headLen;
+  int pkgLen;
   u_char tx_buf[MAX_URI_SIZE];//__attribute__((at(0x68002000)));
   u_char rx_buf[MAX_URI_SIZE];
 };
@@ -91,13 +86,13 @@ typedef struct _http_trans_control
 
 void unescape_http_url(char * url);								/* convert escape character to ascii */
 
-void parse_http_request(http_request_t , uint8_t *,uint32_t);			/* parse request from peer */
+int parse_http_request(http_request_t , u_char *,uint32_t);			/* parse request from peer */
 	
 void make_http_response_head(u_char *, uint8_t, uint32_t);	/* make response header */
 
 unsigned char* get_http_param_value(char* uri, char* param_name);/* get the user-specific parameter value */
 
-void proc_http(conn_t c, uint8_t * buf,uint32_t len);
+int proc_http(conn_t c, uint8_t * buf,uint32_t len);
 
 int do_https(event_t ev);
 

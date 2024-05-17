@@ -57,7 +57,7 @@ void make_basic_config_setting_json_callback(char* buf, char* config_msg)
 }
 void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 {
-	char address[16][32];
+	char address[32][32];
 	char plcCtrl[3][64];
 	char version[128];
 	u_char muxt4=0;
@@ -65,6 +65,8 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 	int eventChn=0;
 	int uploadPort=0;
 	int eventType=0;
+	int hik_p=0;
+	int hik_t=0;
 
 	char plcAddr[32];
 	int plcPort=0;
@@ -155,6 +157,8 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 		uploadPort=sqlite3_column_int(stmt, 2);
 		eventChn=sqlite3_column_int(stmt, 1);
 		eventType=sqlite3_column_int(stmt, 3);
+		hik_p=sqlite3_column_int(stmt, 4);
+		hik_t=sqlite3_column_int(stmt, 5);
 	}
 	sqlite3_finalize(stmt);
 
@@ -200,6 +204,22 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"stream14\":\"%s\",\
 				\"stream15\":\"%s\",\
 				\"stream16\":\"%s\",\
+				\"stream17\":\"%s\",\
+				\"stream18\":\"%s\",\
+				\"stream19\":\"%s\",\
+				\"stream20\":\"%s\",\
+				\"stream21\":\"%s\",\
+				\"stream22\":\"%s\",\
+				\"stream23\":\"%s\",\
+				\"stream24\":\"%s\",\
+				\"stream25\":\"%s\",\
+				\"stream26\":\"%s\",\
+				\"stream27\":\"%s\",\
+				\"stream28\":\"%s\",\
+				\"stream29\":\"%s\",\
+				\"stream30\":\"%s\",\
+				\"stream31\":\"%s\",\
+				\"stream32\":\"%s\",\
 				\"left\":\"%s\",\
 				\"right\":\"%s\",\
 				\"stop\":\"%s\",\
@@ -208,6 +228,8 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"event_chn\":\"%d\",\
 				\"upload_port\":\"%d\",\
 				\"event_type\":\"%d\",\
+				\"hik_p\":\"%d\",\
+				\"hik_t\":\"%d\",\
 				\"version\":\"%s\",\
 				\"plc_addr\":\"%s\",\
 				\"plc_port\":\"%d\",\
@@ -219,8 +241,12 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				address[4],address[5],address[6],address[7],\
 				address[8],address[9],address[10],address[11],\
 				address[12],address[13],address[14],address[15],\
+				address[16],address[17],address[18],address[19],\
+				address[20],address[21],address[22],address[23],\
+				address[24],address[25],address[26],address[27],\
+				address[28],address[29],address[30],address[31],\
 				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec,eventChn,uploadPort,eventType,\
-				version,
+				hik_p,hik_t,version,\
   				plcAddr,plcPort,r0,r1,protocol
          );
 		
@@ -244,55 +270,6 @@ void cgi_postset(http_request_t http_request)
 	uint8_t * param;
 	JSONEEPROM_CFG eeprom_cfg;
 	
-	param = get_http_param_value(http_request->URI,"localIp");		/*获取修改后的IP地址*/
-//	printf("  修改后的 ip 地址 %s \r\n",param);
-	if(param){	inet_addr_((uint8_t*)param, json_config.localIp);}	
-	
-	param = get_http_param_value(http_request->URI,"dcport");
-	if(param){	json_config.dcport = atoi((char*)param);}//字符串指针转uint16
-	
-	param = get_http_param_value(http_request->URI,"dcusr");
-	if(param){snprintf(json_config.user, sizeof(json_config.user), "%s",(char*)param);	}	
-	
-	param = get_http_param_value(http_request->URI,"dcpas");
-	if(param){snprintf(json_config.pass, sizeof(json_config.pass), "%s",(char*)param);	}//
-
-	param = get_http_param_value(http_request->URI,"insw1");	
-	if(param){	json_config.sw[0] = atoi((char*)param);}
-	
-	param = get_http_param_value(http_request->URI,"insw2");	
-	if(param){	json_config.sw[1] = atoi((char*)param);}
-	
-	param = get_http_param_value(http_request->URI,"insw3");	
-	if(param){	json_config.sw[2] = atoi((char*)param);}
-	
-	param = get_http_param_value(http_request->URI,"insw4");	
-	if(param){	json_config.sw[3] = (uint8_t)atoi((char*)param);}
-
-	for(i=1;i<=16;i++)
-	{
-		if(i<10)
-			itoa(i,temp_str+6,1);
-		else
-			itoa(i,temp_str+6,2);
-
-		param = get_http_param_value(http_request->URI,(char*)temp_str);		/*获取修改后的IP地址*/
-		if(param){	inet_addr_((uint8_t*)param, json_config.trigger[i-1]);}
-	}
-
-	
-	eeprom_cfg.token[0]=EEPROM_JSON_ADDR_CHECK1;
-	eeprom_cfg.token[1]=EEPROM_JSON_ADDR_CHECK2;
-	memcpy(eeprom_cfg.localIp, json_config.localIp, 4);
-	eeprom_cfg.dcport[0]=json_config.dcport/256;
-	eeprom_cfg.dcport[1]=json_config.dcport%256;
-	memcpy(eeprom_cfg.user, json_config.user, sizeof(json_config.user));	
-	memcpy(eeprom_cfg.pass, json_config.pass, sizeof(json_config.pass));
-	memcpy(eeprom_cfg.sw, json_config.sw, sizeof(json_config.sw));
-	memcpy(eeprom_cfg.trigger, json_config.trigger, sizeof(json_config.trigger));
-	//taskENTER_CRITICAL();
-	//i2c_write_bytes(eeprom_cfg.token,EEPROM_JSON_SET_ADDR,sizeof(eeprom_cfg));//必须在临界态写入
-	//taskEXIT_CRITICAL();
 
 }
 char cgi_test_process(http_request_t http_request)
@@ -346,9 +323,13 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 		return -1;
 	}
 
-	for(i=0;i<16;i++){
+	for(i=0;i<32;i++){
 		sprintf(stream,"stream%d",i+1);
 		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+		if(!param) {
+			printf("param %s not found\r\n",stream);
+			return -1;
+		}
 		if(verify_ip_address(param)){
 			sprintf(sql,"update camera set address = \"%s\" where id = %d",param,i+1);
 			printf("  修改后的 ch %d sql: %s \r\n",i+1,sql);
@@ -452,6 +433,23 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 	}
 
 
+	sprintf(stream,"hik_p");
+	param = get_http_param_value(http_request->URI,stream);		
+	sprintf(sql,"update event set hik_p= \"%s\" where id = 1",param);
+	ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+	if(ret!= SQLITE_OK )
+	{
+		printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+	}
+
+	sprintf(stream,"hik_t");
+	param = get_http_param_value(http_request->URI,stream);		
+	sprintf(sql,"update event set hik_t= \"%s\" where id = 1",param);
+	ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+	if(ret!= SQLITE_OK )
+	{
+		printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+	}
 
 	sprintf(stream,"plc_addr");
 	param = get_http_param_value(http_request->URI,stream);		
@@ -752,43 +750,61 @@ void make_http_response_head(u_char* buf,uint8_t type,uint32_t len)
 *@param		  request： 新格式体，http发送的原始数据组
 *@return	  无，strtok针对纯文本有效，处理bin不能使用新格式体
 */
-void parse_http_request(http_request_t  request,uint8_t * buf,uint32_t len)
+int parse_http_request(http_request_t  request,u_char * buf,uint32_t len)
 {
-	char * nexttok;
-	nexttok = strtok((char*)buf," ");
-	if(!nexttok)
-	{
-		request->METHOD = METHOD_ERR;
-		return;
+	char * nexttok=NULL;
+	char tmp_buf[128];
+	u_char *head ,*tail;
+	if(request->headLen == 0){
+		
+		if(!strncmp(buf, "GET",3) ||!strncmp(buf, "get",3) )
+		{
+			request->METHOD = METHOD_GET;
+			nexttok = buf+4;			
+		}
+		else if (!strncmp(buf, "HEAD",4) || !strncmp(buf,"head",4))	
+		{
+			request->METHOD = METHOD_HEAD;
+			nexttok = buf+5;  		
+		}
+		else if (!strncmp(buf, "POST",4) || !strncmp(buf,"post",4))
+		{
+			request->METHOD = METHOD_POST;
+			nexttok = buf+5;
+		}
+		else
+		{
+			request->METHOD = METHOD_ERR;
+		}
+
+		if(!nexttok)
+		{
+			request->METHOD = METHOD_ERR; 			
+			return;
+		}
+		tail = str_nstr(buf,"\r\n\r\n",len);
+		if(tail){
+			request->headLen = tail-buf+4;
+		}
+		mid(buf,"Content-Length: ","\r\n",tmp_buf);
+		if(strlen(tmp_buf)){
+			request->contentLen=atoi16(tmp_buf,10);
+		}
+		//printf(">>%s",buf);
+		printf(">>>>>>>contentLen=%d:%d\r\n",request->contentLen,request->headLen);
+		memcpy(request->URI,buf,len); 					
 	}
 
-	if(!strcmp(nexttok, "GET") || !strcmp(nexttok,"get"))
-	{
-		request->METHOD = METHOD_GET;
-		nexttok = strtok(NULL," ");			
-	}
-	else if (!strcmp(nexttok, "HEAD") || !strcmp(nexttok,"head"))	
-	{
-		request->METHOD = METHOD_HEAD;
-		nexttok = strtok(NULL," ");  		
-	}
-	else if (!strcmp(nexttok, "POST") || !strcmp(nexttok,"post"))
-	{
-		request->METHOD = METHOD_POST;
-		nexttok = strtok(NULL,"\0");//20120316
-		//nexttok = strtok(NULL," ");		
-	}
-	else
-	{
-		request->METHOD = METHOD_ERR;
-	}
+	request->pkgLen+=len;
 
-	if(!nexttok)
-	{
-		request->METHOD = METHOD_ERR; 			
-		return;
+	if(request->METHOD==METHOD_GET)
+		return 0;	
+	printf(">>>>>>>con=%d:%d:%d\r\n",request->contentLen,request->headLen,request->pkgLen);
+	if(request->METHOD==METHOD_POST &&request->pkgLen== request->headLen+request->contentLen){
+		memcpy(request->URI+strlen(request->URI),buf,len); 					
+		return 0;
 	}
-	memcpy(request->URI,nexttok,len-((uint8_t*)nexttok-buf)); 					
+	return 1;
 }
 
  /**
@@ -810,13 +826,12 @@ uint8_t* get_http_param_value(char* uri, char* param_name)
 	/***************/
 	mid(uri,"Content-Length: ","\r\n",tmp_buf);
 	content_len=atoi16(tmp_buf,10);
-//  printf("content len=%d\r\n",content_len);
 	uri = (char*)strstr(uri,"\r\n\r\n");
 	uri+=4;
 //  printf("uri=%s\r\n",uri);//ip=172.16.10.245&sub=255.255.255.0&gw=172.16.10.1
 	uri[content_len]=0;
 	/***************/	 
-	name= (uint8_t*)strstr(uri,param_name);
+	name= (uint8_t *)str_nstr(uri,param_name,4096);
 	if(name)
 	{
 		name += strlen(param_name) + 1; 
@@ -827,7 +842,6 @@ uint8_t* get_http_param_value(char* uri, char* param_name)
 		}
 		len=0;
 		len = pos2-name;
-
 		if(len)
 		{
 			ret[len]=0;
@@ -885,15 +899,20 @@ void static_string_page_respond(conn_t c,u_char* http_response,char * h_file)
 *@param		buf：解析报文内容
 *@return	无
 */
-void proc_http(conn_t c, uint8_t * buf,uint32_t len)
+//返回0表示解析成功了
+int proc_http(conn_t c, uint8_t * buf,uint32_t len)
 {
-	char* name; 											
-	char req_name[32]={0x00,};							
+	char* name,*head; 											
+	char req_name[128]={0x00,};							
 	uint8_t* http_response;					/*定义一个http响应报文的指针*/
+	int res =0;
 	http_request_t http_request;			/*定义http请求报文头的结构体指针*/
 	http_response = ((http_request_t)c->data)->tx_buf;
 	http_request = (http_request_t)c->data;
-	parse_http_request(http_request, buf,len);    		/*解析http请求报文头*/
+	res = parse_http_request(http_request, buf,len);    		/*解析http请求报文头*/
+	mid(http_request->URI, "/", " ", req_name);		/*获取该请求的文件名*/
+	printf("post %s \r\n",req_name);
+	if(res==1&&strcmp(req_name,"fileup.cgi")!=0) return 1;
 	u_char tx_buf[4096];
 				
 	switch (http_request->METHOD)		
@@ -904,7 +923,14 @@ void proc_http(conn_t c, uint8_t * buf,uint32_t len)
 			break;		
 		case METHOD_HEAD:																			/*HEAD请求方式*/
 		case METHOD_GET:																			/*GET请求方式*/
-			name = http_request->URI;
+			head = str_nstr(http_request->URI," ",128);
+			if(head){
+				name = str_nstr(head+1," ",128);
+				if(name){
+					memcpy(req_name,head+1,name-head-1);
+				}
+			}
+			name = req_name;
 			printf("get %s \r\n",name);
 #ifdef USE_FATFS_FLASH
 			snprintf(trans_c.filename, sizeof(trans_c.filename),"%s%s",WEB_ROOT_PATH,name);
@@ -1038,6 +1064,7 @@ void proc_http(conn_t c, uint8_t * buf,uint32_t len)
 		default :
 			break;
 	}
+	return 0;
 }
 void http_trans(conn_t c)
 {

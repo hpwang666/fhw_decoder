@@ -154,8 +154,8 @@ loop_ev init (void)
 	loop_ev ev;
 	struct custom_st custom;
 	ev = (loop_ev)calloc(1,sizeof(struct _loop_ev));
-	ev->camConn = (camConnection)calloc(16,sizeof(struct _camConnection));
-	for(i=0;i<16;i++)
+	ev->camConn = (camConnection)calloc(32,sizeof(struct _camConnection));
+	for(i=0;i<32;i++)
 	{
 		ev->camConn[i].channel = i;
 	}
