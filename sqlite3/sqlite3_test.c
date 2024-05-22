@@ -43,12 +43,12 @@ int main()
 	}
 
 #endif
-#if 0
+#if 1
 	result = sqlite3_exec( db, "drop table if exists event", NULL, NULL, &errmsg );
 	if(result != SQLITE_OK ){
 		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
-	result = sqlite3_exec( db, "create table event( ID integer primary key autoincrement, event_chn int,upload_port int,event_type int,hik_p int,hik_t int)", NULL, NULL, &errmsg );
+	result = sqlite3_exec( db, "create table event( ID integer primary key autoincrement, alarm_ip varchar(32),alarm_port int,event_type int,hik_p int,hik_t int)", NULL, NULL, &errmsg );
 
 	if(result != SQLITE_OK )
 
@@ -58,7 +58,7 @@ int main()
 
 
 	//插入一些记录
-	result = sqlite3_exec( db, "insert into event(event_chn,upload_port,event_type,hik_p,hik_t) values (12,10002,2,980,1200)", NULL, 0, &errmsg );
+	result = sqlite3_exec( db, "insert into event(alarm_ip,alarm_port,event_type,hik_p,hik_t) values ('0.0.0.0',10002,2,980,1200)", NULL, 0, &errmsg );
 	if(result != SQLITE_OK )
 
 	{

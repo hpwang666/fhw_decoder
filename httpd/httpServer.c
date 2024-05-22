@@ -62,8 +62,8 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 	char version[128];
 	u_char muxt4=0;
     u_char dec=0; 	
-	int eventChn=0;
-	int uploadPort=0;
+	char alarm_ip[32];
+	int alarmPort=0;
 	int eventType=0;
 	int hik_p=0;
 	int hik_t=0;
@@ -148,14 +148,14 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 	while (SQLITE_ROW == sqlite3_step(stmt)) {
-		printf("id:%d event_chn: %d,upload_port:%d ,event_type:%d \n",\
+		printf("id:%d alarm_ip: %s,alarm_port:%d ,event_type:%d \n",\
 				sqlite3_column_int(stmt, 0),\
-				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_text(stmt, 1),\
 				sqlite3_column_int(stmt, 2),\
 				sqlite3_column_int(stmt, 3));
 
-		uploadPort=sqlite3_column_int(stmt, 2);
-		eventChn=sqlite3_column_int(stmt, 1);
+		sprintf(alarm_ip,"%s",sqlite3_column_text(stmt, 1));
+		alarmPort=sqlite3_column_int(stmt, 2);
 		eventType=sqlite3_column_int(stmt, 3);
 		hik_p=sqlite3_column_int(stmt, 4);
 		hik_t=sqlite3_column_int(stmt, 5);
@@ -225,8 +225,8 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"stop\":\"%s\",\
 				\"muxt4\":\"%d\",\
 				\"dec\":\"%d\",\
-				\"event_chn\":\"%d\",\
-				\"upload_port\":\"%d\",\
+				\"alarm_ip\":\"%s\",\
+				\"alarm_port\":\"%d\",\
 				\"event_type\":\"%d\",\
 				\"hik_p\":\"%d\",\
 				\"hik_t\":\"%d\",\
@@ -245,7 +245,7 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				address[20],address[21],address[22],address[23],\
 				address[24],address[25],address[26],address[27],\
 				address[28],address[29],address[30],address[31],\
-				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec,eventChn,uploadPort,eventType,\
+				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec,alarm_ip,alarmPort,eventType,\
 				hik_p,hik_t,version,\
   				plcAddr,plcPort,r0,r1,protocol
          );
@@ -312,8 +312,8 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 	char sql[256];
 
 
-	int eventChn=0;
-	int uploadPort=0;
+	char alarm_ip[32];
+	int alarmPort=0;
 	int eventType=0;
 
 	if( ret!= SQLITE_OK )
@@ -400,10 +400,10 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 		}
 
 
-	sprintf(stream,"event_chn");
+	sprintf(stream,"alarm_ip");
 	param = get_http_param_value(http_request->URI,stream);		
-	if(verify_num(param)&&(atoi(param)<17)&&(atoi(param)>0)){
-		sprintf(sql,"update event set event_chn= \"%s\" where id = 1",param);
+	if(verify_ip_address(param)){
+		sprintf(sql,"update event set alarm_ip= \"%s\" where id = 1",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
 		{
@@ -412,10 +412,10 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 	}
 
 
-	sprintf(stream,"upload_port");
+	sprintf(stream,"alarm_port");
 	param = get_http_param_value(http_request->URI,stream);		
 	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>8000)){
-		sprintf(sql,"update event set upload_port= \"%s\" where id = 1",param);
+		sprintf(sql,"update event set alarm_port= \"%s\" where id = 1",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
 		{

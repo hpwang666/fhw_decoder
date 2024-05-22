@@ -15,6 +15,7 @@
 #include "udpServer.h"
 #include "plcBus.h" 
 
+#include "hik_event.h"
 #undef  _DEBUG
 #define _DEBUG
 #ifdef _DEBUG
@@ -81,7 +82,6 @@ void *_voLoop(void  *arg)
 	queueNode_t tmp;
 
 	loop_ev ev = (loop_ev)arg;
-
 	printf("vo loop start...\r\n");
 	init_conn_queue();
 	init_timer();
@@ -101,7 +101,9 @@ void *_voLoop(void  *arg)
 	lc = create_listening_udp(11000);
 	init_udp_conn(lc,ev);
 
+	create_event_server(ev);//用于接收海康报警主机的推送信息
 
+	create_alarm_client(ev);//用于给报警主机推送报警信息
 
 	if(ev->protocol){
 		initPlcBus(ev);
@@ -124,7 +126,7 @@ void *_voLoop(void  *arg)
 	
 	}
 
-
+	free_event_server();
 	free_all_conn();
 	free_timer();
 	free_epoll();

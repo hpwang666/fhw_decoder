@@ -3,7 +3,7 @@
 
 #include "queue.h"
 #include "httpclient.h"
-
+#include "connet.h"
 
 struct custom_st{
 	int ch;
@@ -45,9 +45,10 @@ struct _loop_ev
 	int r1;  //寄存器1
 	int protocol;  //plc总线协议
 
-	int event_chn;//事件触发通道
-	int upload_port;//事件上传端口
+	char alarm_ip[32];//报警主机IP
+	int alarmPort;//报警主机端口
 	int event_type;//事件类型 0--人脸  1--人体   2--机动车  3--火灾
+	conn_t alarmConn;
 
 
 	int uart_running;

@@ -79,17 +79,14 @@ int getChnnelInfo(loop_ev ev)
 		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 	while (SQLITE_ROW == sqlite3_step(stmt)) {
-		printf("id:%d event_chn: %d,upload_port:%d ,event_type:%d hik_p:%d hik_t:%d \n",\
+		printf("id:%d alarm_ip: %s,alarm_port:%d ,event_type:%d \n",\
 				sqlite3_column_int(stmt, 0),\
-				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_text(stmt, 1),\
 				sqlite3_column_int(stmt, 2),\
-				sqlite3_column_int(stmt, 3),\
-				sqlite3_column_int(stmt, 4),\
-				sqlite3_column_int(stmt, 5));
+				sqlite3_column_int(stmt, 3));
 
-
-		ev->event_chn =sqlite3_column_int(stmt, 1);
-		ev->upload_port = sqlite3_column_int(stmt, 2);
+		sprintf(ev->alarm_ip,"%s",sqlite3_column_text(stmt, 1));
+		ev->alarmPort=sqlite3_column_int(stmt, 2);
 		ev->event_type  = sqlite3_column_int(stmt, 3);
 		ev->ch0_azimuth= sqlite3_column_int(stmt, 4);//对应P
 		ev->ch0_elevation= sqlite3_column_int(stmt, 5);//对应T
