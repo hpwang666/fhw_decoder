@@ -30,6 +30,7 @@ char send_data[2048]={0};/*上传的数值*/
 uint8_t pub_buf[512];
 
 #define INDEX_HTML "htdocs/index.html"
+#define SCENE_HTML "htdocs/scene.html"
 JSONPOST_CFG json_config;//解码器的配置信息
 
 uint8_t login_flag = 0;
@@ -62,6 +63,7 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 	char version[128];
 	u_char muxt4=0;
     u_char dec=0; 	
+	char passwd[32];
 	char alarm_ip[32];
 	int alarmPort=0;
 	int eventType=0;
@@ -104,7 +106,7 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 	}
 	sqlite3_finalize(stmt);
 
-	sprintf(sql,"select * from plc_ctrl");
+	sprintf(sql,"select * from plc_ctrl where id <4");
 	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
 	if(result != SQLITE_OK )
 	{
@@ -137,6 +139,7 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 			muxt4=sqlite3_column_int(stmt, 2);
 		dec=sqlite3_column_int(stmt, 1);
 		sprintf(version,"%s",sqlite3_column_text(stmt, 3));
+		sprintf(passwd,"%s",sqlite3_column_text(stmt, 4));
 	}
 	sqlite3_finalize(stmt);
 
@@ -225,6 +228,7 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"stop\":\"%s\",\
 				\"muxt4\":\"%d\",\
 				\"dec\":\"%d\",\
+				\"cam_passwd\":\"%s\",\
 				\"alarm_ip\":\"%s\",\
 				\"alarm_port\":\"%d\",\
 				\"event_type\":\"%d\",\
@@ -245,7 +249,7 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				address[20],address[21],address[22],address[23],\
 				address[24],address[25],address[26],address[27],\
 				address[28],address[29],address[30],address[31],\
-				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec,alarm_ip,alarmPort,eventType,\
+				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec,passwd,alarm_ip,alarmPort,eventType,\
 				hik_p,hik_t,version,\
   				plcAddr,plcPort,r0,r1,protocol
          );
@@ -253,7 +257,131 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 }
 
 
+void make_get_scene_json_callback(char* buf, JSONPOST_CFG config_msg)
+{
+	char cams[8][64];
+	char name[8][64];
+	sqlite3 * db = NULL; //声明sqlite关键结构指针
+	int result;
+	int i=0;
+	char * errmsg = NULL;
+	sqlite3_stmt *stmt = NULL;
+	char sql[128];
+	//需要传入 db 这个指针的指针，因为 sqlite3_open 函数要为这个指针分配内存，还要让db指针指向这个内存区
+	result = sqlite3_open( "/mnt/usr/ss.db",&db );
 
+	if( result != SQLITE_OK )
+	{
+		printf("can not open the database %s\r\n",sqlite3_errmsg(db));
+		sqlite3_close(db);
+		return -1;
+	}
+	sprintf(sql,"select * from plc_ctrl where id >3");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d cmd:%s,vo:%d , cameras:%s  \n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_text(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_text(stmt, 3));\
+		sprintf(cams[sqlite3_column_int(stmt, 0)-4],"%s",sqlite3_column_text(stmt, 3));
+		sprintf(name[sqlite3_column_int(stmt, 0)-4],"%s",sqlite3_column_text(stmt, 1));
+	}
+	sqlite3_finalize(stmt);
+
+
+	sqlite3_close( db );
+  sprintf(buf,"getSceneCallback({\
+				\"name4\":\"%s\",\
+				\"name5\":\"%s\",\
+				\"name6\":\"%s\",\
+				\"name7\":\"%s\",\
+				\"name8\":\"%s\",\
+				\"name9\":\"%s\",\
+				\"name10\":\"%s\",\
+				\"name11\":\"%s\",\
+				\"cams4\":\"%s\",\
+				\"cams5\":\"%s\",\
+				\"cams6\":\"%s\",\
+				\"cams7\":\"%s\",\
+				\"cams8\":\"%s\",\
+				\"cams9\":\"%s\",\
+				\"cams10\":\"%s\",\
+				\"cams11\":\"%s\",\
+                });",\
+				name[0],name[1],name[2],name[3],name[4],name[5],name[6],name[7],\
+				cams[0],cams[1],cams[2],cams[3],cams[4],cams[5],cams[6],cams[7]\
+         );
+		
+}
+
+uint8_t set_scene_process(http_request_t http_request)
+{
+	
+	uint8_t ret=0;
+	uint8_t * param;
+	uint8_t i=0;	
+	char name[16];
+	sqlite3 * db = NULL; //声明sqlite关键结构指针
+	char * errmsg = NULL;
+	ret= sqlite3_open( "/mnt/usr/ss.db",&db );
+	char sql[256];
+
+	char cams[64];
+
+	if( ret!= SQLITE_OK )
+	{
+		printf("can not open the database %s\r\n",sqlite3_errmsg(db));
+		sqlite3_close(db);
+		return -1;
+	}
+
+	for(i=4;i<12;i++){
+		printf("%d\r\n",i);
+		sprintf(name,"name%d",i);
+		param = get_http_param_value(http_request->URI,name);		
+		if(!strlen(param)) {
+			printf("param %s not found\r\n",name);
+			continue;
+		}
+		sprintf(sql,"update plc_ctrl set cmd= \"%s\" where id = %d",param,i);
+		printf("  修改后的 cmd %d sql: %s \r\n",i,param);
+		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+		if(ret!= SQLITE_OK )
+		{
+			printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+
+
+		sprintf(cams,"cams%d",i);
+		param = get_http_param_value(http_request->URI,cams);		/*获取修改后的IP地址*/
+		if(!strlen(param)) {
+			printf("param %s not found\r\n",cams);
+			continue;
+		}
+		if(verify_plc_ctrl(param)){
+			sprintf(sql,"update plc_ctrl set cameras= \"%s\" where id = %d",param,i);
+			printf("  修改后的 cams %d sql: %s \r\n",i,param);
+			ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+			if(ret!= SQLITE_OK )
+			{
+				printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+			}
+		}
+		else{
+			printf("error: %s is invaliade \r\n",param);
+		}	
+	}
+
+
+
+	sqlite3_close( db );
+	return 1;
+}
 /**
 *@brief		将配置信息写进单片机eeprom
 *@param		http_request：定义一个http请求的结构体指针
@@ -400,6 +528,16 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 		}
 
 
+	sprintf(stream,"cam_passwd");
+	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+	sprintf(sql,"update controller set passwd= \"%s\" where id = 1",param);
+	ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
+	if(ret!= SQLITE_OK )
+	{
+		printf( "更新失败，错误码:%d，错误原因:%s\r\n", ret, errmsg );
+		}
+
+
 	sprintf(stream,"alarm_ip");
 	param = get_http_param_value(http_request->URI,stream);		
 	if(verify_ip_address(param)){
@@ -414,7 +552,7 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 
 	sprintf(stream,"alarm_port");
 	param = get_http_param_value(http_request->URI,stream);		
-	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>8000)){
+	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>100)){
 		sprintf(sql,"update event set alarm_port= \"%s\" where id = 1",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
@@ -465,7 +603,7 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 
 	sprintf(stream,"plc_port");
 	param = get_http_param_value(http_request->URI,stream);		
-	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>8000)){
+	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>200)){
 		sprintf(sql,"update plc_info set port= \"%s\" where id = 1",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
@@ -828,7 +966,7 @@ uint8_t* get_http_param_value(char* uri, char* param_name)
 	content_len=atoi16(tmp_buf,10);
 	uri = (char*)strstr(uri,"\r\n\r\n");
 	uri+=4;
-//  printf("uri=%s\r\n",uri);//ip=172.16.10.245&sub=255.255.255.0&gw=172.16.10.1
+	//printf("uri=%s\r\n",uri);//ip=172.16.10.245&sub=255.255.255.0&gw=172.16.10.1
 	uri[content_len]=0;
 	/***************/	 
 	name= (uint8_t *)str_nstr(uri,param_name,4096);
@@ -946,14 +1084,16 @@ int proc_http(conn_t c, uint8_t * buf,uint32_t len)
 				sprintf((char *)http_response,"%s%d\r\n\r\n%s",RES_HTMLHEAD_OK,strlen(tx_buf),tx_buf);
 				c->send(c, (uint8_t *)http_response, strlen((char const*)http_response));
 			}	
-#ifdef USE_FATFS_FLASH
-			else if(f_open(&(trans_c.fil),trans_c.filename,FA_READ)==FR_OK)
+			else if(strcmp(name,"/get_scene.js")==0)//
 			{
-				trans_c.remain_filesize = f_size(&(trans_c.fil));
-				trans_c.transmit_count = 0;
-				trans_c.transmit_task = 1;
-			}
-#endif
+				make_get_scene_json_callback(tx_buf,json_config);
+				sprintf((char *)http_response,"%s%d\r\n\r\n%s",RES_HTMLHEAD_OK,strlen(tx_buf),tx_buf);
+				c->send(c, (uint8_t *)http_response, strlen((char const*)http_response));
+			}	
+			else if(strcmp(name,"/scene")==0)//获取解码器分屏的参数
+			{
+				static_string_page_respond(c,http_response,SCENE_HTML);
+			}	
 			else
 			{
 				memcpy(http_response, ERROR_HTML_PAGE, sizeof(ERROR_HTML_PAGE));//404
@@ -1013,15 +1153,17 @@ int proc_http(conn_t c, uint8_t * buf,uint32_t len)
 				sprintf((char *)http_response,"%s%d\r\n\r\n%s",RES_HTMLHEAD_OK,strlen(tx_buf),tx_buf);																												
 				c->send(c, (uint8_t *)http_response, strlen((char *)http_response));		/*发送http响应*/			
 			}
-			else if(strcmp(req_name,"roomview.cgi")==0)			//post文件体				  	
+			else if(strcmp(req_name,"setScene.cgi")==0)			//post文件体				  	
 			{
-				memset(tx_buf,0,sizeof(tx_buf));
-				//sprintf(tx_buf,"%s<<\r\n",shaRoom);
-				//sprintf(shaRoom,"TCPClient state code [whp] TCPClient state code [whp]\r\n ");
-				//memcpy(tx_buf,shaRoom,1000);
-				//printf("strlen [%d]\r\n",strlen(shaRoom));
-				//sprintf(tx_buf,"TCPClient state code [whp] TCPClient state code [whp]\r\n ");
-				//snprintf(shar_room,sizeof(shar_room),"No receive data");//查看后清历史
+				char temp;
+				temp = set_scene_process(http_request);
+				if(temp)
+				{
+					sprintf(tx_buf,"set scene success!");
+				}else
+				{
+					sprintf(tx_buf,"format fail!");
+				}
 				sprintf((char *)http_response,"%s%d\r\n\r\n%s",RES_HTMLHEAD_OK,strlen(tx_buf),tx_buf);																												
 				c->send(c, (uint8_t *)http_response, strlen((char *)http_response));		/*发送http响应*/			
 			}

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+  <title>Index</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+
+  <head>
+    <script>
+    function $(id) {
+      return document.getElementById(id)
+    }
+
+    function getSceneCallback(o) {
+      for (var i = 4; i <= 12; i++) {
+        if ($('txtname' + i)) $('txtname' + i).value = o['name' + i]
+      }
+      for (var i = 4; i <= 12; i++) {
+        if ($('txtcams' + i)) $('txtcams' + i).value = o['cams' + i]
+      }
+    }
+    </script>
+  </head>
+
+  <body style="padding: 0px; margin: auto">
+    <div style="width: 100vw;min-height: 100vh;display: flex;flex-direction: column;justify-content: center;align-items: center;">
+      <h1 style="width: 100%;max-width: 960px;text-align: center;padding: 0px;margin: 0px;">
+		  场景设置
+      </h1>
+      <span id="txtversion" name="version"></span>
+      <fieldset>
+        <legend>Login</legend>
+        <div style="min-width: 451px">
+          <input type="password" class="passw" id="access" name="access" size="10" value /><button onClick="login()">login</button>
+		  
+        </div>
+      </fieldset>
+      <fieldset style="padding-top: 10px">
+        <legend>Settings</legend>
+        <form action="setScene.cgi" method="POST" style="max-width: 960px;display: flex;flex-direction: column;flex-wrap: wrap;">
+          <div style="min-width: 652px;max-width: 960px;display: flex;flex-direction: row;flex-wrap: wrap;justify-content: space-between;">
+            <div style="min-width: 651px">
+				<div id="sceneTitle">
+                <p>
+                  <span  style="color:blue;font-weight:bold"><label>场景序号</label></span>
+                  <span  style="margin-left:30px;color:blue;font-weight:bold"><label>场景名称</label></span>
+                  <span style="margin-left:200px;color:blue;font-weight:bold"><label>摄像头通道列表</label></span>
+                </p>
+				</div>
+              <div style="padding: 0px 10px; border: 1px dotted #66b3ff" id="chlist">
+                <p>
+                  <span><label>04:</label><input type="text" id="txtname4" name="name4" size="16" class="s-inputxt" /></span>
+                  <span class="cams" ><label>cams:</label><input type="text" id="txtcams4" name="cams4" size="32" class="s-inputxt2" /></span>
+                </p>
+                <p>
+                  <span><label>05:</label><input type="text" id="txtname5" name="name5" size="16" class="s-inputxt" /></span>
+                  <span class="cams"><label>cams:</label><input type="text" id="txtcams5" name="cams5" size="32" class="s-inputxt2" /></span>
+                </p>
+                <p>
+                  <span><label>06:</label><input type="text" id="txtname6" name="name6" size="16" class="s-inputxt" /></span>
+                  <span class="cams"><label>cams:</label><input type="text" id="txtcams6" name="cams6" size="32" class="s-inputxt2" /></span>
+                </p>
+                <p>
+                  <span><label>07:</label><input type="text" id="txtname7" name="name7" size="16" class="s-inputxt" /></span>
+                  <span class="cams"><label>cams:</label><input type="text" id="txtcams7" name="cams7" size="32" class="s-inputxt2" /></span>
+                </p>
+                <p>
+                  <span><label>08:</label><input type="text" id="txtname8" name="name8" size="16" class="s-inputxt" /></span>
+                  <span class="cams"><label>cams:</label><input type="text" id="txtcams8" name="cams8" size="32" class="s-inputxt2" /></span>
+                </p>
+                <p>
+                  <span><label>09:</label><input type="text" id="txtname9" name="name9" size="16" class="s-inputxt" /></span>
+                  <span class="cams"><label>cams:</label><input type="text" id="txtcams9" name="cams9" size="32" class="s-inputxt2" /></span>
+                </p>
+                <p>
+                  <span><label>10:</label><input type="text" id="txtname10" name="name10" size="16" class="s-inputxt" /></span>
+                  <span class="cams"><label>cams:</label><input type="text" id="txtcams10" name="cams10" size="32" class="s-inputxt2" /></span>
+                </p>
+                <p>
+                  <span><label>11:</label><input type="text" id="txtname11" name="name11" size="16" class="s-inputxt" /></span>
+                  <span class="cams"><label>cams:</label><input type="text" id="txtcams11" name="cams11" size="32" class="s-inputxt2" /></span>
+                </p>
+              </div>
+              <input type="submit"  id="scenebtn" class="btn" disabled="disabled"/>
+            </div>
+
+            </div>
+          </div>
+        </form>
+      </fieldset>
+      <fieldset style="padding-top: 10px">
+        <legend>Firmware update</legend>
+        <form id="frmFileUp" method="POST" action="fileup.cgi" enctype="multipart/form-data">
+          <p style="padding: 0px; margin: 0px">
+            <input type="file" id="file" name="file" size="16" style="width: 268px" />
+            <input type="submit" id="upbtn" value="Upload" disabled="disabled" style="width: 148px" />
+          </p>
+        </form>
+      </fieldset>
+    </div>
+</template>
+  <script type="text/javascript" src="get_scene.js"></script>
+  <script>
+function login() {
+  var access = $('access').value
+  var xmlhttp = new XMLHttpRequest()
+  xmlhttp.onreadystatechange = function () {
+    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+      var msg = xmlhttp.responseText
+      if (msg != 0) {
+        alert('password error')
+      } else {
+        $('scenebtn').removeAttribute('disabled')
+      }
+    }
+  }
+  xmlhttp.open('POST', '/login.cgi', true)
+  xmlhttp.send('input=' + access)
+}
+
+  </script>
+  <style type="text/css">
+body {
+  text-align: left;
+  background-color: #c0deed;
+  font-family: Verdana;
+}
+
+#main {
+  margin-right: auto;
+  margin-left: auto;
+  margin-top: 30px;
+}
+
+.s-inputxt {
+  width: 110px;
+}
+.s-inputxt2{
+  width: 280px;
+}
+
+#main h3 {
+  color: #66b3ff;
+  text-decoration: underline;
+}
+
+.column {
+  float: left;
+  margin-right: 50px;
+  width: 40%;
+}
+
+@media screen and (max-width: 800px) {
+  .column {
+    width: 100%;
+  }
+}
+
+.button {
+  width: 190px;
+  height: 40px;
+  margin: 0 50px 15px 0;
+}
+
+.passw {
+  margin-right: 20px;
+}
+
+.noscrollbar {
+  overflow: -moz-scrollbars-none;
+  /*隐藏滚动条*/
+  -ms-overflow-style: none;
+  /*隐藏滚动条*/
+}
+
+.noscrollbar::-webkit-scrollbar {
+  /*隐藏滚动条*/
+  width: 0 !important;
+}
+
+@media screen and (min-width: 900px) {
+  fieldset {
+    max-width: 960px;
+  }
+
+  .middle {
+    display: inline-block;
+    width: 268px;
+    margin-left: 5px;
+    text-align: left;
+  }
+}
+
+.btn {
+  height: 42px;
+  width: 252px;
+  margin-top: 10px;
+  border-radius: 4px;
+  border: 1px solid #345678;
+  align-self: right;
+}
+
+
+
+@media screen and (max-width: 899px) {
+  fieldset {
+    max-width: 452px;
+  }
+
+  .middle {
+    display: inline-block;
+    width: 268px;
+    margin-left: 5px;
+    text-align: left;
+    text-justify: distribute-all-lines;
+  }
+
+  .automt {
+    margin-top: 10px;
+  }
+}
+
+.automt p {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+p {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  height: 24px;
+  line-height: 21px;
+}
+#sceneTitle p{
+	align-items: left;
+	justify-content: flex-start;
+}
+.mt10 p:hover {
+  box-shadow: 0px 0px 4px #345678;
+}
+
+.mt10 {
+  margin-top: 10px;
+}
+
+fieldset {
+  width: 100%;
+  border: 1px solid #3190ee;
+  margin-top: 15px;
+}
+
+legend {
+  color: #3190ee;
+  font-weight: 900;
+}
+
+input[type="submit"],
+input[type="button"],
+input[type="file"],
+button {
+  cursor: pointer;
+}
+
+#chlist p {
+  display: flex;
+  flex-direction: row;
+  align-items: left;
+  justify-content: flex-start;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+#chlist p label {
+  padding: 0;
+  width: 60px;
+}
+
+#chlist span {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+.cams {
+  margin-left: 80px;
+}
+
+.small {
+  padding: 0;
+  display: inline-block;
+  width: 60px;
+  text-align: left;
+}
+</style>
+</body>
+
+</html>

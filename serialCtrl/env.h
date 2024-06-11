@@ -24,7 +24,7 @@ typedef struct _camConnection *camConnection;
 
 struct _loop_ev
 {
-	char plcCams[3][64];
+	char plcCams[12][64];
 	camConnection camConn;
 	int ch0_elevation;//初始化的时候保存摄像头垂直位置
 	int ch0_azimuth;//初始化的时候保存摄像头水平位置
@@ -38,6 +38,7 @@ struct _loop_ev
 
 	int muxt4;//4画面时显示子码流还是主码流
 	int decType;//0--h264 1--h265
+	char passwd[32];
 
 	char plcAddr[32]; //PLC的IP地址
 	int plcPort; //plc的端口

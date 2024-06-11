@@ -43,7 +43,7 @@ int main()
 	}
 
 #endif
-#if 1
+#if 0
 	result = sqlite3_exec( db, "drop table if exists event", NULL, NULL, &errmsg );
 	if(result != SQLITE_OK ){
 		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
@@ -77,7 +77,7 @@ int main()
 		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 
-	result = sqlite3_exec( db, "create table controller( ID integer primary key autoincrement, h_type int,muxt4_type int,version varchar(128),info varchar(128))", NULL, NULL, &errmsg );
+	result = sqlite3_exec( db, "create table controller( ID integer primary key autoincrement, h_type int,muxt4_type int,version varchar(128),passwd varchar(128))", NULL, NULL, &errmsg );
 
 	if(result != SQLITE_OK )
 
@@ -87,7 +87,7 @@ int main()
 
 
 	//插入一些记录
-	result = sqlite3_exec( db, "insert into controller(h_type,muxt4_type,version,info) values (0,0,'2023-1104','new')", NULL, 0, &errmsg );
+	result = sqlite3_exec( db, "insert into controller(h_type,muxt4_type,version,passwd) values (0,0,'2023-1104','fhjt12345')", NULL, 0, &errmsg );
 	if(result != SQLITE_OK )
 
 	{
@@ -96,7 +96,7 @@ int main()
 		}
 
 #endif
-#if 1
+#if 0
 	result = sqlite3_exec( db, "drop table if exists camera", NULL, NULL, &errmsg );
 	if(result != SQLITE_OK ){
 		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
@@ -123,6 +123,10 @@ int main()
 
 #endif
 #if 0
+	result = sqlite3_exec( db, "drop table if exists plc_ctrl", NULL, NULL, &errmsg );
+	if(result != SQLITE_OK ){
+		printf( "删除表失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
 	result = sqlite3_exec( db, "create table plc_ctrl( ID integer primary key autoincrement, cmd varchar(32),vo_mutx int,cameras varchar(64) )", NULL, NULL, &errmsg );
 
 	if(result != SQLITE_OK )
@@ -135,6 +139,17 @@ int main()
 		
 		//插入一些记录
 		result = sqlite3_exec( db, "insert into plc_ctrl(cmd,vo_mutx,cameras) values ('LEFT',4,'1,2,3,4')", NULL, 0, &errmsg );
+		if(result != SQLITE_OK )
+
+		{
+			printf( "插入记录失败，错误码:%d，错误原因:%s\r\n", result, errmsg );
+
+		}
+	}
+	for(i=4;i<12;i++){
+		
+		//插入一些记录
+		result = sqlite3_exec( db, "insert into plc_ctrl(cmd,vo_mutx,cameras) values ('未配置',4,'1,2,3,4')", NULL, 0, &errmsg );
 		if(result != SQLITE_OK )
 
 		{

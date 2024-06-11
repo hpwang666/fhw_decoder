@@ -183,7 +183,7 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 					sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
 			}
 			sprintf(netCfg.mediaInfo.camUser,"admin");
-			sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
+			sprintf(netCfg.mediaInfo.camPasswd,env->passwd);
 			netCfg.mediaInfo.camPort =554;
 
 			printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);
@@ -241,7 +241,7 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 			else
 				sprintf(netCfg.mediaInfo.camUrl,"/h264/ch1/sub/av_stream");
 			sprintf(netCfg.mediaInfo.camUser,"admin");
-			sprintf(netCfg.mediaInfo.camPasswd,"fhjt12345");
+			sprintf(netCfg.mediaInfo.camPasswd,env->passwd);
 			netCfg.mediaInfo.camPort =554;
 
 			printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);

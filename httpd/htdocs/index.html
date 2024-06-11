@@ -17,10 +17,11 @@
       if ($('txtleft')) $('txtleft').value = o['left']
       if ($('txtright')) $('txtright').value = o['right']
       if ($('txtstop')) $('txtstop').value = o['stop']
+      if ($('txtcam_passwd')) $('txtcam_passwd').value = o['cam_passwd']
       $('in3' + o.muxt4).checked = true
       $('in4' + o.dec).checked = true
-      if ($('txtevent_chn')) $('txtevent_chn').value = o['event_chn']
-      if ($('txtupload_port')) $('txtupload_port').value = o['upload_port']
+      if ($('txtalarm_ip')) $('txtalarm_ip').value = o['alarm_ip']
+      if ($('txtalarm_port')) $('txtalarm_port').value = o['alarm_port']
       if ($('txtevent_type')) $('txtevent_type').value = o['event_type']
       if ($('txtplc_addr')) $('txtplc_addr').value = o['plc_addr']
       if ($('txtplc_port')) $('txtplc_port').value = o['plc_port']
@@ -44,6 +45,8 @@
         <div style="min-width: 451px">
           <input type="password" class="passw" id="access" name="access" size="10" value /><button onClick="login()">login</button>
           <button onClick="reboot()" style="padding-right: 10px">重启</button>
+          <button onClick="setScene()" style="padding-right: 10px">场景设置</button>
+		  
         </div>
       </fieldset>
       <fieldset style="padding-top: 10px">
@@ -144,13 +147,16 @@
                   <span><input type="radio" id="in40" name="dec" value="0" />H264</span>
                   <span><input type="radio" id="in41" name="dec" value="1" />H265</span>
                 </p>
+				<p>
+                    <label class="small" style="width: 100px">摄像头密码:</label><input type="password" id="txtcam_passwd" name="cam_passwd" size="13"  /></span>
+				</p>
               </div>
               <div style="padding: 0 10px; border: 1px dotted #66b3ff" class="mt10">
                 <p>
                   <label class="middle">PLC地址:</label><input type="text" id="txtplc_addr" name="plc_addr" class="s-inputxt" />
                 </p>
                 <p>
-                  <label class="middle">端口(8000-20000):</label><input type="text" id="txtplc_port" name="plc_port" class="s-inputxt" />
+                  <label class="middle">端口(200-20000):</label><input type="text" id="txtplc_port" name="plc_port" class="s-inputxt" />
                 </p>
                 <p>
                   <label class="middle">行走寄存器(&lt;50000):</label><input type="text" id="plc_offset0" name="r0" class="s-inputxt" />
@@ -169,10 +175,13 @@
               </div>
               <div style="padding: 0 10px; border: 1px dotted #66b3ff" class="mt10">
                 <p>
-                  <label class="middle">抓拍机触发通道:</label><input type="text" id="txtevent_chn" name="event_chn" class="s-inputxt" />
+                  <label class="middle">报警主机IP:</label><input type="text" id="txtalarm_ip" name="alarm_ip" class="s-inputxt" />
                 </p>
                 <p>
-                  <label class="middle">触发端口(8000-20000):</label><input type="text" id="txtupload_port" name="upload_port" class="s-inputxt" />
+                  <label class="middle">报警主机端口(8000-20000):</label><input type="text" id="txtalarm_port" name="alarm_port" class="s-inputxt" />
+                </p>
+                <p>
+                  <label class="middle">触发端口:</label><input type="text"  class="s-inputxt" value="8080" disabled="true"/>
                 </p>
                 <p>
                   <label class="middle">抓拍方式:</label>
@@ -228,6 +237,10 @@ function reboot() {
   xmlhttp.open('POST', '/reboot.cgi', true)
   xmlhttp.send('input=')
 }
+function setScene(){
+	this.location.href="/scene"
+}
+
   </script>
   <style type="text/css">
 body {

@@ -38,7 +38,7 @@ int udp_read_handle(event_t ev)
 			
 			if(r==8&& check_plc_ctrl_available(buf->head)){
 				printf("%s:%d recv>>%s\n",c->peer_ip,c->peer_port,buf->head);
-				if(buf->head[5]==0x32){//切屏
+				if(buf->head[5]==0x32){//切屏 $$060201
 						transVoByPLC(c, buf->head[7]-0x30);
 				}
 				if(buf->head[5]==0x31){//联动变焦
@@ -103,7 +103,7 @@ int transVoByPLC(conn_t c, int cmd)
 		lastCmd =cmd;
 	else return 0;
 
-	if(cmd>0 && cmd<4){
+	if(cmd>0 && cmd<12){
 		custom.ch =0; 
 		custom.cmd = 0xaa;
 		custom.stop =cmd;//0x01--LEFT 0X02--RIGHT 0X03--STOP 

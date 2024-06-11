@@ -9,18 +9,16 @@
 static int plc_connect_handler(event_t ev);
 static int plc_reconnect_peer(event_t ev);
 uint16_t check_crc(uint8_t* pbuffer, int length);
-		
+static int modbus_read_handle(event_t ev);
+static int plc_read_handle(event_t ev);
+int handle_memobus(conn_t c,int len);
+int handle_modbus(conn_t c,int len);
+
+static int init_accepted_modbus_server_conn(conn_t c,void *arg);
 int plc_read_handle(event_t ev)
 {
 	int r;
-	int cmd;	
-	struct custom_st custom;
-	static int zoomCmd=-1;
-	int tempHeight;
-	uint16_t height_H;
-	static int voCmd=-1;
 	conn_t c = (conn_t)ev->data;
-	loop_ev env = (loop_ev)c->data;
 	if (ev->timedout) {//数据读取超时
 		//close_conn(c);//此处不能close，会释放conn，引起错误指针
 		ev->timedout = 0;
@@ -43,49 +41,8 @@ int plc_read_handle(event_t ev)
 			buf->size += r;
 			buf->tail += r;
 			
-			printf("recv>>%d\n",r);
-
 			//00 03 06 00 00 00 00 01 4d 22 33
-			if(r==11){
-				if( 0/*buf->head[6]^voCmd*/){
-					voCmd=buf->head[6];
-					if(voCmd==0) cmd =3;
-					if(voCmd==0x04) cmd =1;
-					if(voCmd==0x02) cmd =2;
-					if(cmd>0 && cmd<4){
-						custom.ch =0; 
-						custom.cmd = 0xaa;
-						custom.stop =cmd;//0x01--LEFT 0X02--RIGHT 0X03--STOP 
-						queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
-					}
-				}
-				if(buf->head[3]&0x80){//负数，在地平面之下  3300是地上的高度
-					height_H=(buf->head[3]<<8)&0xff00;
-					tempHeight = 3300+(0xffff-height_H-buf->head[4]);
-				}
-				else{
-					height_H=(buf->head[3]<<8)&0xff00;
-					tempHeight = 3300-(height_H+buf->head[4]);
-				}
-				printf("height0:%d\r\n",tempHeight);
-				tempHeight=(tempHeight/99)&0xff;
-				printf("height1:%d\r\n",tempHeight);
-				if( tempHeight^zoomCmd){
-					zoomCmd=tempHeight;
-					cmd = tempHeight;
-					custom.ch = 0;	
-					custom.cmd = 0xaa;
-					custom.stop =cmd; 
-					queue_push(env->ptzQueue,1,sizeof(struct custom_st),&custom);
-
-					//把画面切换到1通道
-					custom.ch =0; 
-					custom.cmd = 0x1a;
-					custom.stop =0;//这里不需要 
-					queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
-				}
-			}
-
+			handle_memobus(c,r);
 			buf_consume(buf, r);
 			if(ev->ready){
 				printf("ready\n");
@@ -93,6 +50,47 @@ int plc_read_handle(event_t ev)
 		}
 	}while(ev->ready);
 	add_timer(c->write,2000);
+
+	//handle_read_event(ev);//此句只有在缓存数据没读完才会触发，以上的循环已经把数据读完了
+	return 0;
+}
+
+
+static int modbus_read_handle(event_t ev)
+{
+	int r;
+	conn_t c = (conn_t)ev->data;
+	if (ev->timedout) {//数据读取超时
+		close_conn(c);//
+		ev->timedout = 0;
+		//plc_reconnect_peer(ev);
+		return AIO_ERR;
+	}
+	//del_timer(c->read);
+	buf_t buf=c->readBuf;
+	do{
+		buf_extend(buf, 4096);
+		r = c->recv(c,buf->tail,4096);
+		if(r<=0){
+			if(r==0){
+				close_conn(c);//
+				printf("peer conn closed:%s:%d\n",c->peer_ip,c->peer_port);
+				return 0;
+			}
+			else handle_read_event(ev);
+		}
+		else{
+			buf->size += r;
+			buf->tail += r;
+			
+			handle_modbus(c,r);
+			buf_consume(buf, r);
+			if(ev->ready){
+				printf("ready\n");
+			}
+		}
+	}while(ev->ready);
+	add_timer(c->read,6000);
 
 	//handle_read_event(ev);//此句只有在缓存数据没读完才会触发，以上的循环已经把数据读完了
 	return 0;
@@ -114,8 +112,58 @@ uint16_t check_crc(uint8_t* pbuffer, int length)
 	return wcrc;
 }
 
+int handle_memobus(conn_t c,int len)
+{
+	int cmd;	
+	struct custom_st custom;
+	static int zoomCmd=-1;
+	int tempHeight;
+	uint16_t height_H;
+	static int voCmd=-1;
+	buf_t buf=c->readBuf;
+	loop_ev	env = (loop_ev)c->data;
+	if(len==11){
+		if( 0/*buf->head[6]^voCmd*/){
+			voCmd=buf->head[6];
+			if(voCmd==0) cmd =3;
+			if(voCmd==0x04) cmd =1;
+			if(voCmd==0x02) cmd =2;
+			if(cmd>0 && cmd<4){
+				custom.ch =0; 
+				custom.cmd = 0xaa;
+				custom.stop =cmd;//0x01--LEFT 0X02--RIGHT 0X03--STOP 
+				queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
+			}
+		}
+		if(buf->head[3]&0x80){//负数，在地平面之下  3300是地上的高度
+			height_H=(buf->head[3]<<8)&0xff00;
+			tempHeight = 3300+(0xffff-height_H-buf->head[4]);
+		}
+		else{
+			height_H=(buf->head[3]<<8)&0xff00;
+			tempHeight = 3300-(height_H+buf->head[4]);
+		}
+		printf("height0:%d\r\n",tempHeight);
+		tempHeight=(tempHeight/99)&0xff;
+		printf("height1:%d\r\n",tempHeight);
+		if( tempHeight^zoomCmd){
+			zoomCmd=tempHeight;
+			cmd = tempHeight;
+			custom.ch = 0;	
+			custom.cmd = 0xaa;
+			custom.stop =cmd; 
+			queue_push(env->ptzQueue,1,sizeof(struct custom_st),&custom);
 
-int plc_write_handle(event_t ev)
+			//把画面切换到1通道
+			custom.ch =0; 
+			custom.cmd = 0x1a;
+			custom.stop =0;//这里不需要 
+			queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
+		}
+	}
+	return 0;
+}
+int memobus_write_handle(event_t ev)
 {
 	int n;
 	conn_t c =(conn_t) ev->data;
@@ -136,22 +184,61 @@ int plc_write_handle(event_t ev)
 }
 
 
+int handle_modbus(conn_t c,int len)
+{
+	int cmd;	
+	struct custom_st custom;
+	static int voCmd=-1;
+	loop_ev	env = (loop_ev)c->data;
+	buf_t buf=c->readBuf;
+	if(buf->head[14]==0x01) cmd=0x01;
+	else if(buf->head[16]==0x01) cmd=0x02;
+	else cmd=0x03;
+
+	if(cmd^voCmd){
+		voCmd=cmd;
+		custom.ch =0; 
+		custom.cmd = 0xaa;
+		custom.stop =cmd;//0x01--LEFT 0X02--RIGHT 0X03--STOP 
+		queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
+	}
+	return 0;
+}
 
 int initPlcBus(loop_ev env)
 {
-	conn_t  pc;
+	conn_t  pc,lc;
 	int ret;
 	
 
-	printf("%s:%d\r\n",env->plcAddr,env->plcPort);
-	ret = connect_peer(env->plcAddr,env->plcPort,&pc);
-	pc->data = env;//传入参数
-	if(ret == AIO_AGAIN){
-		pc->read->handler = plc_connect_handler;
-		pc->write->handler = plc_connect_handler;//write超时函数
-		add_timer(pc->write, 1000);//加入定时器去判断
+	if(env->protocol==2){
+		printf("create memobus client\r\n");
+		ret = connect_peer(env->plcAddr,env->plcPort,&pc);
+		pc->data = env;//传入参数
+		if(ret == AIO_AGAIN){
+			pc->read->handler = plc_connect_handler;
+			pc->write->handler = plc_connect_handler;//write超时函数
+			add_timer(pc->write, 1000);//加入定时器去判断
+		}
+		if(ret == AIO_OK);
 	}
-	if(ret == AIO_OK);
+	if(env->protocol==1){
+		printf("create modbus server port:%d\r\n",env->plcPort);
+		lc = create_listening(env->plcPort);//
+		lc->ls_handler = init_accepted_modbus_server_conn;
+		lc->ls_arg = env;//这里利用lc将参数最终传递给所有的c->data
+	}
+
+	return 0;
+}
+
+
+static int init_accepted_modbus_server_conn(conn_t c,void *arg)
+{
+	c->read->handler = modbus_read_handle;
+	c->data = (loop_ev)arg;//env
+	printf("PLC client=%s:%d peer=%s:%d\n", c->local_ip,c->local_port,c->peer_ip,c->peer_port);
+	add_event(c->read,READ_EVENT);
 	
 	return 0;
 }
@@ -186,7 +273,7 @@ static int plc_connect_handler(event_t ev)
 	c->write->ready = 1;//可写
 	add_event(c->read,READ_EVENT);
 	c->read->handler =plc_read_handle;
-	c->write->handler = plc_write_handle;
+	c->write->handler = memobus_write_handle;
 	add_timer(c->write, 1000);//加入定时器去判断
 	
 	return 0;

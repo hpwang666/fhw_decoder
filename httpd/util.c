@@ -284,7 +284,7 @@ int verify_plc_ctrl(char* src )
 	strcpy(tsrc,src);
 	if(strlen(src)==0) return 0;
 	
-	for(i = 0; i < 4; i++)
+	for(i = 0; i < 16; i++)
 	{
 		tok = strtok(tok,",");
 		if ( !tok ) return 1;
@@ -294,7 +294,7 @@ int verify_plc_ctrl(char* src )
 			if(tok[j]>0x39||tok[j]<0x30)
 				return 0;
 		}
-		if(atoi(tok)>16) return 0;
+		if(atoi(tok)>32) return 0;
 		tok = NULL;
 	}
 	return 1;	
