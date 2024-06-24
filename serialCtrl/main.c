@@ -101,9 +101,9 @@ void *_voLoop(void  *arg)
 	lc = create_listening_udp(11000);
 	init_udp_conn(lc,ev);
 
+	create_alarm_client(ev);//用于给报警主机推送报警信息
 	create_event_server(ev);//用于接收海康报警主机的推送信息
 
-	create_alarm_client(ev);//用于给报警主机推送报警信息
 
 	if(ev->protocol){
 		initPlcBus(ev);

@@ -198,7 +198,7 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 
 		i=0;
 		for (p = strtok(cams, sep);p != NULL;p=strtok(NULL,sep)) {
-			if(atoi(p)>0 && atoi(p)<17)
+			if(atoi(p)>0 && atoi(p)<33)
 				chns[i]=atoi(p);
 			else chns[i] = 1;
 			i++;
@@ -236,10 +236,13 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 				netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
 			else
 				sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[chns[i]-1].address);
-			if(voMutx==1 || voMutx ==4)
-				sprintf(netCfg.mediaInfo.camUrl,"/h264/ch1/main/av_stream");
+			if(voMutx==1)
+				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/main/av_stream",env->decType==0?"h264":"h265");
+			else if(voMutx==4){
+				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/%s/av_stream",env->decType==0?"h264":"h265",env->muxt4==0?"sub":"main");
+			}
 			else
-				sprintf(netCfg.mediaInfo.camUrl,"/h264/ch1/sub/av_stream");
+				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
 			sprintf(netCfg.mediaInfo.camUser,"admin");
 			sprintf(netCfg.mediaInfo.camPasswd,env->passwd);
 			netCfg.mediaInfo.camPort =554;
