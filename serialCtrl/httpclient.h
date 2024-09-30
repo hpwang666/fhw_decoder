@@ -27,6 +27,8 @@ struct httpclient_st
 	char* header;//1024
 	char* body;//1024
 	char* httpBuf;//4096
+	int pkgLen;
+	int contentLen;
 	status httpST;//http status
 	int httpFD;
 };

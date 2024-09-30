@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include "connet.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -148,7 +149,7 @@ int recv_noblock(httpclient_t ct)
 								printf("error when ioctl recv\r\n");
 							}
 							else {
-								recv_len= recv(ct->httpFD, ct->httpBuf, 4096, 0);	
+								recv_len= recv(ct->httpFD, ct->httpBuf+ct->pkgLen, 4096, 0);	
 							}
 						}
 					}
@@ -267,6 +268,8 @@ int httpClientGet(httpclient_t ct, char *uri)
 	int len;
 	int res;
 	char code_buf[10];
+	char contentLen[10];
+	u_char *tail;
 	const char *h_header = "User-Agent: FHJT_Http_Client\r\nAccept: */*\r\nConnection: Keep-alive\r\nAccept-Encoding: identity\r\n";
 
 #if 0
@@ -347,12 +350,15 @@ int httpClientGet(httpclient_t ct, char *uri)
 			return -1;
 		}
 		// res = recv(ct->httpFD, ct->httpBuf, 4096, 0);//++++++++++++++++++++++++++++++++++
+		memset(ct->httpBuf, '\0', 4096);
+		ct->pkgLen=0;
 		res = recv_noblock(ct);
 		if (res <= 0)
 		{
 			httpClearConn(ct);
 			return -1;
 		}
+		ct->pkgLen = res;
 		// printf("###2h:%s,b:%s,f:%s\r\n\r\n", ct->header, ct->body, ct->httpBuf); //-------2recv,real message
 		mid(ct->httpBuf, "HTTP/1.1 ", " ", code_buf);
 		if (strcmp(code_buf, "401") == 0)
@@ -364,7 +370,18 @@ int httpClientGet(httpclient_t ct, char *uri)
 		{
 			if (strcmp(code_buf, "200") != 0)
 				printf("##warning:%s,\r\n##RES:%s\r\n",ct->header,ct->httpBuf);
-			return res;
+
+			mid(ct->httpBuf, "Content-Length: ", " ", contentLen);
+			ct->contentLen = atoi(contentLen);
+
+			tail = str_nstr((u_char *)ct->httpBuf,"\r\n\r\n",ct->pkgLen);
+			//  printf("%d %d\r\n",tail+4-(u_char *)ct->httpBuf,ct->contentLen) ;
+			if(ct->contentLen +(tail+4-(u_char *)ct->httpBuf)!=ct->pkgLen){
+				
+				res = recv_noblock(ct);
+				ct->pkgLen +=res;
+			}
+			return ct->pkgLen;
 		}			
 	}
 	else if (strcmp(code_buf, "404") == 0)
@@ -382,6 +399,9 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 	int len;
 	int res;
 	char code_buf[10];
+
+	char contentLen[10];
+	u_char *tail;
 
 	const char *h_header = "User-Agent: FHJT_Http_Client\r\nAccept: */*\r\nConnection: Keep-alive\r\nAccept-Encoding: identity\r\n";
 	const char *h_con_type = "Content-Type: text/xml; charset=\"UTF-8\"\r\n";
@@ -418,20 +438,19 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 		return -1;
 	}
 
+	memset(ct->httpBuf, '\0', 4096);
+	ct->pkgLen=0;
 	res = recv_noblock(ct);
-	//printf(">>>%s\n",ct->httpBuf);
 	if (res <= 0)
 	{
 		httpClearConn(ct);
 		return -1;
 	}
-
-
-
+	// printf("###2h:%s,b:%s,f:%s\r\n\r\n", ct->header, ct->body, ct->httpBuf); //-------2recv,real message
 	mid(ct->httpBuf, "HTTP/1.1 ", " ", code_buf);
 	if (strcmp(code_buf, "401") == 0)
 	{
-		
+
 		res = generate_auth(ct, uri);
 		if (res == -1)
 		{
@@ -441,11 +460,6 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 		if (res == 0)
 		{
 			printf("***closeing\n\r");
-			res = recv(ct->httpFD, ct->httpBuf, 4096, 0);
-			if (res == 0)
-			{
-				close(ct->httpFD);
-			}
 			res = connect_server(ct->auth->serverIP,80);
 			if (res == -1)
 			{
@@ -475,6 +489,31 @@ int httpClientPut(httpclient_t ct, char *uri, char *content)
 			httpClearConn(ct);
 			return -1;
 		}
+		ct->pkgLen = res;
+		mid(ct->httpBuf, "HTTP/1.1 ", " ", code_buf);
+		if (strcmp(code_buf, "401") == 0)
+		{
+			printf("##pass error\r\n");
+			return -1;
+		}
+		else
+		{
+			if (strcmp(code_buf, "200") != 0)
+				printf("##warning0:%s,\r\n##RES:%s\r\n",ct->header,ct->httpBuf);
+
+			mid(ct->httpBuf, "Content-Length: ", " ", contentLen);
+			ct->contentLen = atoi(contentLen);
+
+			tail = str_nstr((u_char *)ct->httpBuf,"\r\n\r\n",ct->pkgLen);
+			//  printf("%d %d\r\n",tail+4-(u_char *)ct->httpBuf,ct->contentLen) ;
+			if(ct->contentLen +(tail+4-(u_char *)ct->httpBuf)!=ct->pkgLen){
+				printf("read again \r\n");
+				res = recv_noblock(ct);
+				ct->pkgLen +=res;
+				printf("%s",ct->httpBuf);
+			}
+			return ct->pkgLen;
+		}			
 	}
 	else if (strcmp(code_buf, "404") == 0)
 	{

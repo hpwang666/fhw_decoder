@@ -940,6 +940,7 @@ int parse_http_request(http_request_t  request,u_char * buf,uint32_t len)
 	printf(">>>>>>>con=%d:%d:%d\r\n",request->contentLen,request->headLen,request->pkgLen);
 	if(request->METHOD==METHOD_POST &&request->pkgLen== request->headLen+request->contentLen){
 		memcpy(request->URI+strlen(request->URI),buf,len); 					
+		printf(">>>length is right \r\n");
 		return 0;
 	}
 	return 1;
