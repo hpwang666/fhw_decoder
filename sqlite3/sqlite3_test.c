@@ -112,7 +112,7 @@ int main()
 	for(i=1;i<33;i++){
 		
 		//插入一些记录
-		result = sqlite3_exec( db, "insert into camera(address, url,h_type) values ('0.0.0.0','/chn/0/h264/main',0)", NULL, 0, &errmsg );
+		result = sqlite3_exec( db, "insert into camera(address, url,h_type) values ('0.0.0.0','/h264/ch1/main/av_stream',0)", NULL, 0, &errmsg );
 		if(result != SQLITE_OK )
 
 		{

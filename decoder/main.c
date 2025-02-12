@@ -83,34 +83,6 @@ int server_read_handle(event_t ev)
 	return 0;
 }
 
-static PKG_TYPE get_resp_len(buf_t buf,int *pkgLen)
-{
-	int size = buf->size;
-	u_char *data = buf->head;
-	u_char* head,*tail;
-	int offset=0;
-	int httpLen=0;
-
-	*pkgLen =0;
-	
-	head =str_nstr(data, (char *)"nihaoya", size);
-	if(NULL ==head){
-		buf_init(buf);
-		return PKG_BAD;
-	}
-		
-	offset = (head-data);
-	httpLen = size - offset;
-	buf_consume(buf,offset);
-	
-	tail = str_nstr(head, (char *)"0\r\n\r\n", httpLen);//分包结束
-	if(NULL ==tail)
-		return PKG_MIN;
-	
-	*pkgLen = tail-head + 5 ;
-	
-	return PKG_TXT;
-}
 int server_write_handle(event_t ev)
 {
 	int n;

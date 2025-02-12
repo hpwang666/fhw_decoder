@@ -177,6 +177,7 @@ static int rtsp_read_handle(event_t ev)
 	
 	if (ev->timedout) {//数据读取超时
 		//close_conn(c);//此处不能close，会释放conn，引起错误指针
+		printf("read0 timeout\r\n");
 		ev->timedout = 0;
 		rc->success = 0;
 		cc=(u_char *)(rc->sess->url)+sizeof(struct str_st)+rc->sess->url->size+1;
@@ -193,6 +194,7 @@ static int rtsp_read_handle(event_t ev)
 			p->failed = 0;
 			memset(p->last,0,(p->end-p->last+1));
 		}	
+		rc->sess->play=NULL;
 		rc->sess->realm=NULL;
 		rc->sess->session=NULL;
 		rc->sess->nonce=NULL;
@@ -210,7 +212,7 @@ static int rtsp_read_handle(event_t ev)
 		return AIO_ERR;
     } 
 	if(rc->success)//避免密码错误发生反复请求
-		add_timer(c->read, 3000);
+		add_timer(c->read, 4000);
 	
 	buf_extend(buf, 4096);
 	r = c->recv(c,buf->tail,4096);
@@ -234,6 +236,7 @@ static int rtsp_read_handle(event_t ev)
 				p->failed = 0;
 				memset(p->last,0,(p->end-p->last+1));
 			}	
+			rc->sess->play=NULL;
 			rc->sess->realm=NULL;
 			rc->sess->session=NULL;
 			rc->sess->nonce=NULL;
@@ -454,7 +457,7 @@ static int send_play(rtspClient_t rc)
 	conn_t c=rc->conn;
 	str_t_ndup(rc->pool,opt,512);
 	str_t_append(opt,"PLAY ",5);
-	str_t_cat(opt,rc->sess->control);
+	str_t_cat(opt,rc->sess->play);
 
 	str_t_append(opt," RTSP/1.0\r\n",11);
 	
@@ -611,8 +614,17 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 		}
 	}
 	head = (char *)str_nstr((u_char *)data,"control:",len);
+	if(head){
+		tail=(char *)str_nstr((u_char *)head,"\r\n",len-((u_char*)head-data));
+		if(tail){
+			head+=8;
+			str_t_ndup(rc->pool,rc->sess->play,128);
+			str_t_append(rc->sess->play,head,tail-head);
+		}
+	}
+	head = (char *)str_nstr((u_char *)data,"m=video",len);//获取视频的轨道
 	if(head ){
-		head+=8;
+		head+=7;
 		head = (char *)str_nstr((u_char *)head,"control:",len-((u_char*)head-data));
 		if(head){
 			tail=(char *)str_nstr((u_char *)head,"\r\n",len-((u_char*)head-data));

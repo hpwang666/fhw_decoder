@@ -47,7 +47,7 @@ int getChnnelInfo(loop_ev ev)
 		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 	while (SQLITE_ROW == sqlite3_step(stmt)) {
-		printf("id:%d address: %s, ip:%s,  type: %d\n",\
+		printf("id:%d address: %s, url:%s,  type: %d\n",\
 				sqlite3_column_int(stmt, 0),\
 				sqlite3_column_text(stmt, 1),\
 				sqlite3_column_text(stmt, 2),\
@@ -55,6 +55,7 @@ int getChnnelInfo(loop_ev ev)
 
 		camConn=&(ev->camConn[sqlite3_column_int(stmt, 0)-1]);
 		sprintf(camConn->address,"%s",sqlite3_column_text(stmt, 1));
+		sprintf(camConn->url,"%s",sqlite3_column_text(stmt, 2));
 		if((camConn->ct) != NULL) {httpclientFree(camConn->ct); camConn->ct=NULL;}
 		if(strncmp(camConn->address,"0.0.0.0",7)!=0){
 			camConn->ct = httpClientCreat(camConn->address,"admin","fhjt12345");

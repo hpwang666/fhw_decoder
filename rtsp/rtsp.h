@@ -29,7 +29,8 @@ struct rtspClient_st{
 };
 
 struct mediaSession_st{
-	str_t url;
+	str_t url;//新增内容只能加下面，否则会影响set zero
+	str_t play;
 	str_t session;
 	
 	str_t realm;

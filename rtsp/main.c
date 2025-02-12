@@ -152,7 +152,7 @@ int main()
 	msec64 t,delta;
 	int ret;	
 	conn_t lc;
-//	rtspClient_t rc[16];
+	//rtspClient_t rc[16];
 	
 	signal(SIGTERM, on_sig_term);
 	signal(SIGQUIT, on_sig_term);
@@ -163,7 +163,7 @@ int main()
 	init_epoll();
 	list = create_pool_list();
 
-	unixBuf=buf_new(2048*1024);
+	unixBuf=buf_new(0x380000);//3.5M
 	init_media();
 	lc = create_listening(10000);
 	lc->ls_handler = init_accepted_conn;
@@ -197,14 +197,18 @@ int main()
 	rc[3]->chn = 3;
 
 
-	rc[0] = init_rtsp_clients(list,"172.16.10.41",554,"root","fhjt12345","/axis-media/media.amp?videocodec=h264&resolution=1280x720&fps=25");	
+#endif 
+
+
+#if 0
+	rc[0] = init_rtsp_clients(list,"192.168.1.41",554,"root","fhjt12345","/axis-media/media.amp?videocodec=h264&resolution=1280x720&fps=25");	
 	rc[0]->chn=0;
-	rc[1] = init_rtsp_clients(list,"172.16.10.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
+	rc[1] = init_rtsp_clients(list,"192.168.1.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
 	rc[1]->chn = 1;
 
-	rc[2] = init_rtsp_clients(list,"172.16.10.40",554,"root","fhjt12345","/axis-media/media.amp?videocodec=h264&resolution=1280x720&fps=25");	
+	rc[2] = init_rtsp_clients(list,"192.168.1.41",554,"root","fhjt12345","/axis-media/media.amp?videocodec=h264&resolution=1280x720&fps=25");	
 	rc[2]->chn=2;
-#endif 
+#endif
 	while(!got_sig_term)
 	{
 		t = find_timer();

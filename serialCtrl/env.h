@@ -15,6 +15,7 @@ typedef struct custom_st *custom_t;
 struct _camConnection
 {
 	char address[32];
+	char url[96];
 	int channel;
 	httpclient_t ct;
 	char camName[32];
@@ -30,6 +31,7 @@ struct _loop_ev
 	int ch0_azimuth;//初始化的时候保存摄像头水平位置
 	queue_t ptzQueue;
 	queue_t voQueue;
+	poolList_t poolList;
 	int serialFd;
 
 	int channel;//当进行多画面操作的时候，必须置位-1
@@ -45,6 +47,7 @@ struct _loop_ev
 	int r0;  //寄存器0
 	int r1;  //寄存器1
 	int protocol;  //plc总线协议
+	conn_t modbusListenConn;
 
 	char alarm_ip[32];//报警主机IP
 	int alarmPort;//报警主机端口

@@ -149,6 +149,7 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 	const char* sep = ",";
 	int allChns=0;
 	char* p = NULL;
+	pool_t pool;
 
 	if(customCmd->cmd != 0xaa){//串口切屏
 		
@@ -174,19 +175,35 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 					netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
 				else
 					sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[i+sqlite3Chn].address);
-				if(voMutx==1)
-					sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/main/av_stream",env->decType==0?"h264":"h265");
+
+
+				sprintf(netCfg.mediaInfo.camUrl,"%s",env->camConn[i+sqlite3Chn].url);
+				pool = get_pool(env->poolList,4096);
+				p=netCfg.mediaInfo.camUrl;
+				if(env->decType)
+					p=str_replace(pool,p,"264","265");
+				if(voMutx==1){
+					;
+				}
 				else if(voMutx==4){
-					sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/%s/av_stream",env->decType==0?"h264":"h265",env->muxt4==0?"sub":"main");
+					if(env->muxt4==0) p=str_replace(pool,p,"main","sub");
 				}
 				else
-					sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
+					p=str_replace(pool,p,"main","sub");
+
+				//针对没有子码流的摄像头
+				//if(i==0&&voMutx>1){
+				//	if(str_nstr((u_char*)p,"sub",strlen(p)))
+				//		p=str_replace(pool,p,"sub","main");
+				//}
+				sprintf(netCfg.mediaInfo.camUrl,"%s",p);
+				destroy_pool(pool);
 			}
 			sprintf(netCfg.mediaInfo.camUser,"admin");
 			sprintf(netCfg.mediaInfo.camPasswd,env->passwd);
 			netCfg.mediaInfo.camPort =554;
 
-			printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);
+			printf("cam :%s %s \r\n",netCfg.mediaInfo.camAddress,netCfg.mediaInfo.camUrl);
 			//memset(netCfg.mediaInfo.camAddress,0,32);
 
 			c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));
@@ -236,19 +253,34 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 				netCfg.mediaInfo.camAddress[0] = 0;//这个小格格就是黑屏
 			else
 				sprintf(netCfg.mediaInfo.camAddress,"%s",env->camConn[chns[i]-1].address);
-			if(voMutx==1)
-				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/main/av_stream",env->decType==0?"h264":"h265");
+			sprintf(netCfg.mediaInfo.camUrl,"%s",env->camConn[chns[i]-1].url);
+			pool = get_pool(env->poolList,4096);
+
+			p=netCfg.mediaInfo.camUrl;
+			if(env->decType)
+				p=str_replace(pool,p,"264","265");
+			if(voMutx==1){
+				;
+			}
 			else if(voMutx==4){
-				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/%s/av_stream",env->decType==0?"h264":"h265",env->muxt4==0?"sub":"main");
+				if(env->muxt4==0) p=str_replace(pool,p,"main","sub");
 			}
 			else
-				sprintf(netCfg.mediaInfo.camUrl,"/%s/ch1/sub/av_stream",env->decType==0?"h264":"h265");
+				p=str_replace(pool,p,"main","sub");
+
+			//针对没有子码流的摄像头
+			//if(i==0&&voMutx>1){
+			//	if(str_nstr((u_char*)p,"sub",strlen(p)))
+			//		p=str_replace(pool,p,"sub","main");
+			//}
+			sprintf(netCfg.mediaInfo.camUrl,"%s",p);
+			destroy_pool(pool);
+
 			sprintf(netCfg.mediaInfo.camUser,"admin");
 			sprintf(netCfg.mediaInfo.camPasswd,env->passwd);
 			netCfg.mediaInfo.camPort =554;
 
-			printf("cam ip :%s \r\n",netCfg.mediaInfo.camAddress);
-			//memset(netCfg.mediaInfo.camAddress,0,32);
+			printf("cam :%s %s \r\n",netCfg.mediaInfo.camAddress,netCfg.mediaInfo.camUrl);
 			c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));
 		}
 	}

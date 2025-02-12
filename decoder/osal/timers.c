@@ -35,7 +35,7 @@ static void getCurentTime(void)
     gettimeofday(&tv, NULL);
     sec = tv.tv_sec;
     msec = tv.tv_usec / 1000;
-	currentTime = sec * 1000 + msec;
+	currentTime = sec * 1000LL + msec;
 }
 
 

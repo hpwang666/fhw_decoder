@@ -8,6 +8,7 @@
 #include "osal.h"
 #include "decoder.h"
 #include "vo.h"
+#include "mpi_vo.h"
 
 
 int osal_printf(int task_id,int events)

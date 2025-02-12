@@ -48,7 +48,7 @@ int transCmd(loop_ev env, custom_t cmdCmd)
 			cam0407 = 0;
 		if (cmdCmd->cmd == 0xaa)
 		{ //union ctrl
-			printf("ch0 auto zoom ctrl \r\n");
+			printf("ch0 auto zoom ctrl: %d\r\n",cmdCmd->stop);
 			snprintf(h_con, 1024, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\
 					<PTZData><AbsoluteHigh><elevation>%d</elevation><azimuth>%d</azimuth> \
 					<absoluteZoom>%d</absoluteZoom></AbsoluteHigh></PTZData>",env->ch0_elevation,env->ch0_azimuth,cmdCmd->stop);

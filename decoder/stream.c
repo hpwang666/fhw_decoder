@@ -336,7 +336,8 @@ int make_seqc_right(u_char *bufIN, size_t len, int chn ,decoder_t dec)
 	if(dec->timestamp != timestamp){
 		dec->timestamp = timestamp;
 		if(dec->refused == 0)
-		    dec->time40ms+=39800;
+		    //dec->time40ms+=39800;
+		    dec->time40ms+=40000;
 	}
 	
 	return seqcRight;

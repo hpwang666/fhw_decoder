@@ -23,6 +23,8 @@ lib/
 test/
 connet/
 include/
+rsync/
+zlog/output
 
 ### IntelliJ IDEA ###
 .idea

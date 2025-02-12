@@ -106,7 +106,7 @@ void *_voLoop(void  *arg)
 
 
 	if(ev->protocol){
-		initPlcBus(ev);
+		initPlcBus();
 	}
 	while(ev->vo_running)
 	{
@@ -126,6 +126,7 @@ void *_voLoop(void  *arg)
 	
 	}
 
+	releasePlcBus();
 	free_event_server();
 	free_all_conn();
 	free_timer();
@@ -168,6 +169,7 @@ loop_ev init (void)
 	ev->vo_running =1 ;
 	ev->http_running = 1;
 	
+	ev->poolList  = create_pool_list();
 	ev->ptzQueue=queue_new(16,sizeof(struct custom_st ));
 	ev->voQueue=queue_new(16,sizeof(struct custom_st ));
 	
