@@ -3,11 +3,11 @@ include ../Makefile.pub
 INCLUDES=$(wildcard *.h)
 DEFS =
 CFLAGS := -Wall $(DEFS) -I.  -g 
-CFLAGS +=  -I./   -I../connet/ -I../connet/util
+CFLAGS +=  -I./   -I../connet/ -I../zlog/output/include -I../connet/util
 CXXFLAGS:=$(CFLAGS)
 CCFLAGS:=$(CFLAGS)
-LIBPATH := 
-LIBS := -lpthread ../connet/connet.a
+LIBPATH := -L../zlog/output/lib
+LIBS := -lpthread -lzlog ../connet/connet.a
 INSTALL_DIR=/home/work/nfs/nvr
 
 

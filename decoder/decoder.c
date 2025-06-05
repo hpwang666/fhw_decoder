@@ -37,6 +37,8 @@ decEnv_t create_dec_chns(void)
 		{	
 			printf("FY_MPI_VDEC_SetUserPic fail for %#x!\n", s32Ret);
 		}
+
+		decEnv->dec25[i].hevcPPS=(HEVCPPS_t)calloc(1,sizeof(struct HEVCPPS_st));
 	}
 	return decEnv;
 }
@@ -46,5 +48,6 @@ void free_dec_chns(decEnv_t decEnv)
 	int i;
 	for(i=0;i<CHNS;i++){
 		dec_buf_free(decEnv->dec25[i].buf);
+		free(decEnv->dec25[i].hevcPPS);
 	}
 }

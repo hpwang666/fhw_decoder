@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#include "zlog.h"
 #include "queue.h"
 #include <env.h>
 #include "hikisapi.h"
@@ -16,13 +17,18 @@
 #include "plcBus.h" 
 
 #include "hik_event.h"
-#undef  _DEBUG
-#define _DEBUG
-#ifdef _DEBUG
-	#define debug(...) printf(__VA_ARGS__)
+
+
+#undef LOG_HANDLE
+#define LOG_HANDLE
+#ifdef  LOG_HANDLE
+	#define log_info(...) zlog_info(env->zc,__VA_ARGS__)
+	#define log_err(...)  zlog_error(env->zc,__VA_ARGS__)
 #else
-	#define debug(...)
+	#define log_info(...) printf(__VA_ARGS__);printf("\r\n")
+	#define log_err(...) printf(__VA_ARGS__);printf("\r\n")
 #endif
+
 loop_ev env;
 
 static void on_sig_term(int sig);
@@ -42,6 +48,7 @@ void *_mainLoop(void  *arg)
 				case 0x2a:
 				case 0x4a:
 				case 0x6a:
+				case 0x8a:
 				case 0x9a:
 				case 0xfa:
 					ev->voType = data[1]	;//存储是为了判断单画面下操作PTZ
@@ -157,6 +164,20 @@ loop_ev init (void)
 	loop_ev ev;
 	struct custom_st custom;
 	ev = (loop_ev)calloc(1,sizeof(struct _loop_ev));
+
+#ifdef  LOG_HANDLE
+	int rc= zlog_init("/mnt/usr/zlog.conf");
+	if(rc){
+		printf("init zlog failed \r\n");
+		exit(-1);
+	}
+	ev->zc=zlog_get_category("my_cat");
+	if(!ev->zc){
+		printf("get cat failed\r\n")	;
+		zlog_fini();
+		exit(-1);
+	}
+#endif
 	ev->camConn = (camConnection)calloc(32,sizeof(struct _camConnection));
 	for(i=0;i<32;i++)
 	{
@@ -172,6 +193,7 @@ loop_ev init (void)
 	ev->poolList  = create_pool_list();
 	ev->ptzQueue=queue_new(16,sizeof(struct custom_st ));
 	ev->voQueue=queue_new(16,sizeof(struct custom_st ));
+	ev->eventQueue= queue_new(8,sizeof(struct event2plc_st));
 	
 	custom.ch = 0;
 	custom.cmd = 0x1a;
@@ -193,6 +215,10 @@ void clean(loop_ev ev)
 	free(ev->camConn);
 	queue_free(ev->ptzQueue);
 	queue_free(ev->voQueue);
+	queue_free(ev->eventQueue);
+#ifdef  LOG_HANDLE
+	zlog_fini();
+#endif
 	free(ev);
 }
 static void on_sig_term(int sig)
@@ -207,9 +233,11 @@ int main()
 {
 	
 	env = init();
+	log_info("\n\n\n\n>>>>>hello fhjt<<<<<\n\n");
 	signal(SIGTERM, on_sig_term);
 	signal(SIGQUIT, on_sig_term);
 	signal(SIGINT, on_sig_term);
+	
 	pthread_join(env->uart_worker, NULL);
 	pthread_join(env->http_worker, NULL);
 	pthread_join(env->vo_worker, NULL);

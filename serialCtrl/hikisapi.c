@@ -40,6 +40,28 @@ int getChnnelInfo(loop_ev ev)
 		sqlite3_close(db);
 		return -1;
 	}
+
+
+	sprintf(sql,"select * from controller where id = 1");
+	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
+	if(result != SQLITE_OK )
+	{
+		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
+	}
+	while (SQLITE_ROW == sqlite3_step(stmt)) {
+		printf("id:%d h_type: %d,muxt4:%d passwd:%s\n",\
+				sqlite3_column_int(stmt, 0),\
+				sqlite3_column_int(stmt, 1),\
+				sqlite3_column_int(stmt, 2),\
+				sqlite3_column_text(stmt, 4));\
+
+		ev->decType=sqlite3_column_int(stmt, 1);
+		ev->muxt4=sqlite3_column_int(stmt, 2);
+		sprintf(ev->passwd,"%s",sqlite3_column_text(stmt, 4));
+	}
+	sqlite3_finalize(stmt);
+	
+
 	sprintf(sql,"select * from camera");
 	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
 	if(result != SQLITE_OK )
@@ -58,7 +80,7 @@ int getChnnelInfo(loop_ev ev)
 		sprintf(camConn->url,"%s",sqlite3_column_text(stmt, 2));
 		if((camConn->ct) != NULL) {httpclientFree(camConn->ct); camConn->ct=NULL;}
 		if(strncmp(camConn->address,"0.0.0.0",7)!=0){
-			camConn->ct = httpClientCreat(camConn->address,"admin","fhjt12345");
+			camConn->ct = httpClientCreat(camConn->address,"admin",ev->passwd);
 			if(getCamName(ev,camConn))
 				debug("channel[%d]:%s,name:%s\r\n",i,camConn->address,camConn->camName);
 
@@ -111,24 +133,6 @@ int getChnnelInfo(loop_ev ev)
 	}
 	sqlite3_finalize(stmt);
 
-	sprintf(sql,"select * from controller where id = 1");
-	result = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
-	if(result != SQLITE_OK )
-	{
-		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
-	}
-	while (SQLITE_ROW == sqlite3_step(stmt)) {
-		printf("id:%d h_type: %d,muxt4:%d passwd:%s\n",\
-				sqlite3_column_int(stmt, 0),\
-				sqlite3_column_int(stmt, 1),\
-				sqlite3_column_int(stmt, 2),\
-				sqlite3_column_text(stmt, 4));\
-
-		ev->decType=sqlite3_column_int(stmt, 1);
-		ev->muxt4=sqlite3_column_int(stmt, 2);
-		sprintf(ev->passwd,"%s",sqlite3_column_text(stmt, 4));
-	}
-	sqlite3_finalize(stmt);
 
 
 

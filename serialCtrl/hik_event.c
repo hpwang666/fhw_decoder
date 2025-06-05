@@ -11,6 +11,17 @@
 #include "hik_event.h"
 
 
+#undef LOG_HANDLE
+#define LOG_HANDLE
+#ifdef  LOG_HANDLE
+	#define log_debug(...) zlog_debug(env->zc,__VA_ARGS__)
+	#define log_info(...) zlog_info(env->zc,__VA_ARGS__)
+	#define log_err(...)  zlog_error(env->zc,__VA_ARGS__)
+#else
+	#define log_debug(...) printf(__VA_ARGS__);printf("\r\n")
+	#define log_info(...) printf(__VA_ARGS__);printf("\r\n")
+	#define log_err(...) printf(__VA_ARGS__);printf("\r\n")
+#endif
 
 static int init_accepted_hik_server_conn(conn_t c,void *arg);
 static cache_t hikEventCache ;
@@ -27,20 +38,33 @@ int event_read_handle(event_t event)
 	int r;
 	int res;
 	int i;
+	struct event2plc_st event2plc;
 	conn_t c = (conn_t)event->data;
 	cacheNode_t node= (cacheNode_t)(c->data);
 	readJpeg_t readJpeg = (readJpeg_t)node->data;
 	loop_ev env = (loop_ev)readJpeg->env;
 	//threadPool_t tp = (threadPool_t)c->data;//lc->ls_arg
 	buf_t buf=c->readBuf;
+	if (event->timedout) {
+		for(i=0;i<32;i++){
+			if(strncmp(c->peer_ip,env->camConn[i].address,strlen(c->peer_ip))==0) break;
+		}
+		event2plc.ch=i;
+		event2plc.event=0;
+		log_debug("hik event[%d]:conn timeout",i);
+		queue_push(env->eventQueue,1,sizeof(struct event2plc_st),&event2plc);
+		event->timedout = 0;
+		cache_push(hikEventCache, node);
+		close_conn(c);
+	}
+
 	do{
 		buf_extend(buf, 4096);
 		r = c->recv(c,buf->tail,4096);
 		if(r<=0){
 			if(r==0){
-				cache_push(hikEventCache, node);
-				close_conn(c);
-				printf("peer conn closed:%s:%d\n",c->peer_ip,c->peer_port);
+				log_debug("peer conn closed:%s:%d",c->peer_ip,c->peer_port);
+				return 0;
 			}
 			else handle_read_event(event);
 		}
@@ -135,6 +159,7 @@ static int init_accepted_hik_server_conn(conn_t c,void *arg)
 	c->data = node;
 	printf("Acceped,client=%s:%d peer=%s:%d\n", c->local_ip,c->local_port,c->peer_ip,c->peer_port);
 	add_event(c->read,READ_EVENT);
+	add_timer(c->read,4000);//当超时之后推送事件结束的信息
 	
 	return 0;
 }
@@ -143,7 +168,7 @@ int create_event_server(loop_ev ev)
 {
 	conn_t lc;
 	
-	hikEventCache = cache_new(6,sizeof(struct readJpeg_st));
+	hikEventCache = cache_new(8,sizeof(struct readJpeg_st));
 	
 	lc = create_listening(8080);//默认8080端口
 	lc->ls_handler = init_accepted_hik_server_conn;
@@ -225,7 +250,7 @@ static int handWriteBuf2File(readJpeg_t readJpeg)
 	}
 	if(readJpeg->bufIndex == readJpeg->headLength+4+readJpeg->contentLen[0])//数据接收完成
 	{
-		printf("ok done\r\n");
+		printf("ok done");
 		return 0;
 	}
 	else{
@@ -262,6 +287,7 @@ static int handEventVo(char *eventHost,loop_ev env)
 {
 	int i;
 	struct custom_st custom;
+	struct event2plc_st event2plc;
 	camConnection camConn;
 	camConn = env->camConn;
 	for(i=0;i<32;i++){
@@ -274,5 +300,9 @@ static int handEventVo(char *eventHost,loop_ev env)
 	custom.cmd = 0x1a;
 	custom.stop =0;//这里不需要 
 	queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
+
+	event2plc.ch=i;
+	event2plc.event=1;
+	queue_push(env->eventQueue,1,sizeof(struct event2plc_st),&event2plc);
 	return 0;
 }

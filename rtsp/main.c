@@ -8,17 +8,20 @@
 
 #include "shmring.h"
 #include "media.h"
+#include "zlog.h"
 
 
-#undef  _DEBUG
-#define _DEBUG
-#ifdef _DEBUG
-	#define debug(...) printf(__VA_ARGS__)
+#undef LOG_HANDLE
+//#define LOG_HANDLE
+#ifdef  LOG_HANDLE
+	#define log_info(...) {zlog_info(zc,__VA_ARGS__);printf(__VA_ARGS__);printf("\r\n");}
+	#define log_err(...)  {zlog_error(zc,__VA_ARGS__);printf(__VA_ARGS__);printf("\r\n");}
 #else
-	#define debug(...)
-#endif 
+	#define log_info(...) printf(__VA_ARGS__)
+	#define log_err(...) printf(__VA_ARGS__)
+#endif
 
-
+zlog_category_t *zc;
 poolList_t list;
 
 conn_t unixFd;
@@ -45,7 +48,7 @@ int server_read_handle(event_t ev)
 	if(r<=0){
 		if(r==0){
 			close_conn(c);
-			debug("peer conn closed:%s:%d\n",c->peer_ip,c->peer_port);
+			log_info("peer conn closed:%s:%d",c->peer_ip,c->peer_port);
 		}
 		else handle_read_event(ev);
 	}
@@ -53,6 +56,7 @@ int server_read_handle(event_t ev)
 		buf->size += r;
 		buf->tail += r;
 		
+		log_info("read size :%d",r);
 		//printf("%x,%x,%x \n",buf->head[0],buf->head[1],buf->head[2]);
 		
 		pkg_type = config_pkg(buf,&pkg_len);
@@ -81,10 +85,12 @@ int server_read_handle(event_t ev)
 				//else add_event(c->write,WRITE_EVENT);
 			}
 			pkg_type = config_pkg(buf,&pkg_len);
+			if(pkg_type>0)
+				log_info("multi decode");
 		}
 		
 		if( pkg_type == -1){
-			printf(">>>>>>>bad config package\r\n");
+			log_info(">>>>>>>bad config package");
 			ret = search_pkg_head(buf);
 			buf_consume(buf, ret);	
 		}
@@ -152,11 +158,25 @@ int main()
 	msec64 t,delta;
 	int ret;	
 	conn_t lc;
-	//rtspClient_t rc[16];
+	//rtspClient_t rtsp[16];
 	
 	signal(SIGTERM, on_sig_term);
 	signal(SIGQUIT, on_sig_term);
 	signal(SIGINT, on_sig_term);
+
+
+	int rc= zlog_init("/mnt/usr/zlog.conf");
+	if(rc){
+		printf("init zlog failed \r\n");
+		exit(-1);
+	}
+	zc=zlog_get_category("rtsp");
+	if(!zc){
+		printf("get cat failed\r\n")	;
+		zlog_fini();
+		exit(-1);
+	}
+	log_info("\n\n\n\n>>>>>hello rtsp<<<<<\n\n");
 	
 	init_conn_queue();
 	init_timer();
@@ -180,10 +200,10 @@ int main()
 	rtpPkg = malloc(sizeof(struct rtpPkg_st));
 	
 #if 0
-	rc[0] = init_rtsp_clients(list,"192.168.1.213",554,"admin","fhjt12345","/h265/ch1/main/av_stream");	
-	rc[0]->chn = 0;
-	rc[1] = init_rtsp_clients(list,"192.168.1.213",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
-	rc[1]->chn = 1;
+	rtsp[0] = init_rtsp_clients(list,"192.168.1.123",554,"admin","@Fhjt0717","/h265/ch1/main/av_stream");	
+	rtsp[0]->chn = 0;
+	rtsp[1] = init_rtsp_clients(list,"192.168.1.44",554,"admin","@Fhjt0717","/h264/ch1/main/av_stream");	
+	rtsp[1]->chn = 1;
 	rc[2] = init_rtsp_clients(list,"192.168.1.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
 	rc[2]->chn = 2;
 	rc[3] = init_rtsp_clients(list,"192.168.1.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	
@@ -226,6 +246,7 @@ end:
 	free_timer();
 	free_epoll();
 	buf_free(unixBuf);
+	zlog_fini();
 	return 0;
 }
 

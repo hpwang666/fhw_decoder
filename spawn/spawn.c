@@ -76,6 +76,7 @@ static int spawn(const char *appPath, char **appArgv,const char *user,const char
 			char *b = (char*)malloc(strlen("exec ") + strlen(appPath) + 1);
 			strcpy(b, "exec ");
 			strcat(b, appPath);
+			strcat(b," -a 0.0.0.0");
 			/* exec the app */
 			execl("/bin/sh", "sh", "-c", b, (char *)NULL);
 			/* in nofork mode stderr is still open */
@@ -112,8 +113,8 @@ int main(int argc, char **argv)
 	signed int i;
 	int daemon_mode = 0;
 	const char *app = NULL;
-	const char *user= "work";
-	const char *group= "work";
+	const char *user= "root";
+	const char *group= "root";
 	pid_t child = 0;
 	
 	if (argc < 2) { /* no arguments given */

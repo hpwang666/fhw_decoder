@@ -7,16 +7,22 @@
 #include <termios.h>//终端控制定义  
 #include <errno.h>  
 #include<sys/ioctl.h>
+#include "env.h"
  
 #define DEVICE "/dev/ttyS1"  
   
-#undef  _DEBUG
-#define _DEBUG
-#ifdef _DEBUG
-	#define debug(...) printf(__VA_ARGS__)
+
+#undef LOG_HANDLE
+//#define LOG_HANDLE
+#ifdef  LOG_HANDLE
+	#define log_info(...) zlog_info(env->zc,__VA_ARGS__)
+	#define log_err(...)  zlog_error(env->zc,__VA_ARGS__)
 #else
-	#define debug(...)
+	#define log_info(...) printf(__VA_ARGS__);printf("\r\n")
+	#define log_err(...) printf(__VA_ARGS__);printf("\r\n")
 #endif
+
+extern loop_ev env;
 
 int initSerial(void)  
 {  
@@ -92,7 +98,7 @@ int serialRecv(int serial_fd,char *data)
 			return -1;
 		}
 		len = read(serial_fd, data, 4);
-		debug("len[%d]:%02x %02x %02x %02x\n\r",len,data[0],data[1],data[2],data[3]);
+		log_info("len[%d]:%02x %02x %02x %02x",len,data[0],data[1],data[2],data[3]);
 		crc=data[0]^data[1];
 		crc=~(crc^data[2]);
 		return len;

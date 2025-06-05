@@ -4,6 +4,7 @@
 #include "queue.h"
 #include "httpclient.h"
 #include "connet.h"
+#include "zlog.h"
 
 struct custom_st{
 	int ch;
@@ -23,8 +24,17 @@ struct _camConnection
 
 typedef struct _camConnection *camConnection;
 
+
+struct event2plc_st{
+	int ch;
+	int event;//0表示没有事件
+};
+typedef struct event2plc_st *event2plc_t;
+
 struct _loop_ev
 {
+
+	zlog_category_t *zc;
 	char plcCams[12][64];
 	camConnection camConn;
 	int ch0_elevation;//初始化的时候保存摄像头垂直位置
@@ -52,6 +62,7 @@ struct _loop_ev
 	char alarm_ip[32];//报警主机IP
 	int alarmPort;//报警主机端口
 	int event_type;//事件类型 0--人脸  1--人体   2--机动车  3--火灾
+	queue_t eventQueue;//事件推送
 	conn_t alarmConn;
 
 

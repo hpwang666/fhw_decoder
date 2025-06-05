@@ -54,7 +54,7 @@ int main()
 	rc[1] = init_rtsp_clients(list,"10.14.5.17",554,"admin","ABCabc123","/h264/ch1/main/av_stream");	
 	rc[1]->chn = 1;
 #else 
-	rc[1] = init_rtsp_clients(list,"172.16.10.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");
+	rc[1] = init_rtsp_clients(list,"192.168.1.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");
 	rc[1]->chn = 1;
 
 #endif 

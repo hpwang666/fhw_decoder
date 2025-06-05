@@ -591,7 +591,7 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 
 	sprintf(stream,"plc_addr");
 	param = get_http_param_value(http_request->URI,stream);		
-	if(verify_ip_address(param)){
+	if(param&&verify_ip_address(param)){
 		sprintf(sql,"update plc_info set address= \"%s\" where id = 1",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )
@@ -603,7 +603,7 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 
 	sprintf(stream,"plc_port");
 	param = get_http_param_value(http_request->URI,stream);		
-	if(verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>200)){
+	if(param&&verify_num(param)&&(atoi(param)<20000)&&(atoi(param)>200)){
 		sprintf(sql,"update plc_info set port= \"%s\" where id = 1",param);
 		ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 		if(ret!= SQLITE_OK )

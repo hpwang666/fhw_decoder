@@ -11,6 +11,17 @@
 #include "env.h"
 
 		
+
+#undef LOG_HANDLE
+//#define LOG_HANDLE
+#ifdef  LOG_HANDLE
+	#define log_info(...) zlog_info(env->zc,__VA_ARGS__)
+	#define log_err(...)  zlog_error(env->zc,__VA_ARGS__)
+#else
+	#define log_info(...) printf(__VA_ARGS__);printf("\r\n")
+	#define log_err(...) printf(__VA_ARGS__);printf("\r\n")
+#endif
+
 int rtsp_read_handle(event_t ev)
 {
 	int r;
@@ -155,12 +166,13 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 		
 		voMutx = (customCmd->cmd&0xff)>>4;
 		chn = customCmd->ch;
-		if(voMutx == 15) voMutx =16;
+		if(voMutx == 15) voMutx =16;//把0x0f--15 变成16
+		if(voMutx==8) voMutx=6;//暂时不支持8画面
 		int sqlite3Chn = voMutx*chn;
 		//这里需要对9-3  里面超过的部分进行限制
 		allChns = voMutx;
 		if(sqlite3Chn==27) allChns = 5;//9-3
-		printf("%02x:%d:%d\r\n",customCmd->cmd,voMutx,sqlite3Chn);
+		log_info("cmd:%02x vo:%d sqlite3:%d",customCmd->cmd,voMutx,sqlite3Chn);
 		for(i=0;i<voMutx;i++){
 			memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));
 			netCfg.magic=PKG_MAGIC;
@@ -196,6 +208,12 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 				//	if(str_nstr((u_char*)p,"sub",strlen(p)))
 				//		p=str_replace(pool,p,"sub","main");
 				//}
+				if(i==0&&voMutx==6){
+					if(str_nstr((u_char*)p,"sub",strlen(p)))
+						p=str_replace(pool,p,"sub","main");
+				}
+
+
 				sprintf(netCfg.mediaInfo.camUrl,"%s",p);
 				destroy_pool(pool);
 			}
@@ -203,7 +221,7 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 			sprintf(netCfg.mediaInfo.camPasswd,env->passwd);
 			netCfg.mediaInfo.camPort =554;
 
-			printf("cam :%s %s \r\n",netCfg.mediaInfo.camAddress,netCfg.mediaInfo.camUrl);
+			log_info("cam :%s %s",netCfg.mediaInfo.camAddress,netCfg.mediaInfo.camUrl);
 			//memset(netCfg.mediaInfo.camAddress,0,32);
 
 			c->send(c,(u_char *)&netCfg,sizeof(struct netConfig_st));

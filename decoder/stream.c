@@ -8,6 +8,9 @@
 	extern FILE *fp;
 	int fileCnt=0;
 #endif
+
+
+
 int process_rtp(u_char *bufIN, size_t inLen, int chn,decoder_t dec,int dec_type)
 {
 	int rtpType;	
@@ -40,14 +43,13 @@ int do_decode(decoder_t dec,int chn,int rtpType)
 		fp=NULL;
 	}
 	else{
-		if(dec->EN_SPS==0 ||rtpType != RTP_SPS)
-			fwrite(dec->buf->head,1,dec->buf->size,fp);
+		fwrite(dec->buf->head,1,dec->buf->size,fp);
 		fflush(fp);
 	}
 #endif
 	//以下实际上第二次来PPP的时候并没有删除，而是和后面的I帧一起送给了解码器
 	//如果分开送，就会出现解码延时等问题，很奇怪
-	if((rtpType &RTP_SPS) && (dec->EN_SPS == 0)){//SPS PPS		
+	if((rtpType & RTP_PPS )&& (dec->EN_PPS == 0) ){//SPS PPS		
 		dec->decStream.u64PTS   =DEC_TIMESTAMP;
 		dec->decStream.pu8Addr =  dec->buf->head;
 		dec->decStream.u32Len  =  dec->buf->size; 
@@ -57,48 +59,53 @@ int do_decode(decoder_t dec,int chn,int rtpType)
 		if(dec->refused == 0)	{
 			ret=FY_MPI_VDEC_SendStream(chn, &(dec->decStream), 0);
 			if(ret !=FY_SUCCESS) printf("%d:may be dec is busy：%x\r\n",chn,ret);
-			dec->EN_SPS =1;	
 		}
-		
+		dec->EN_PPS=1;
 		dec_buf_init(dec->buf);
 		dec->PKG_STARTED = 0;
 	}
 	else if(RTP_P & rtpType){	
-		dec->decStream.u64PTS =DEC_TIMESTAMP;//由VO模块进行帧率控制
-		dec->decStream.pu8Addr = dec->buf->head;
-		dec->decStream.u32Len  = dec->buf->size; 
-		dec->decStream.bEndOfFrame  = FY_TRUE;
-		dec->decStream.bEndOfStream = FY_FALSE;  
+		if(!dec->hevcPPS->tiles_enabled_flag ||(dec->hevcPPS->tiles_enabled_flag&&(dec->slice_P_counter==dec->hevcPPS->num_tile_columns)) )
+		{
+			dec->decStream.u64PTS =DEC_TIMESTAMP;//由VO模块进行帧率控制
+			dec->decStream.pu8Addr = dec->buf->head;
+			dec->decStream.u32Len  = dec->buf->size; 
+			dec->decStream.bEndOfFrame  = FY_TRUE;
+			dec->decStream.bEndOfStream = FY_FALSE;  
 
-		//下面必须保证重新开始接收解码之前要有I帧先解码，这样就不会出现花屏
-		if(dec->refused == 0 && dec->waitIfream==0)	{
-			ret=FY_MPI_VDEC_SendStream(chn, &(dec->decStream), 0);
-			if(ret !=FY_SUCCESS) printf("%d:may be dec is busy：%x\r\n",chn,ret);
+			//下面必须保证重新开始接收解码之前要有I帧先解码，这样就不会出现花屏
+			if(dec->refused == 0 && dec->waitIfream==0)	{
+				ret=FY_MPI_VDEC_SendStream(chn, &(dec->decStream), 0);
+				if(ret !=FY_SUCCESS) printf("%d:may be dec is busy：%x\r\n",chn,ret);
+			}
+			if(dec->refused){
+				dec->waitIfream = 1;
+			}		
+			dec_buf_init(dec->buf);
+			dec->PKG_STARTED = 0;
+			dec->slice_P_counter=0;
 		}
-		if(dec->refused){
-			dec->waitIfream = 1;
-		}		
-		dec_buf_init(dec->buf);
-		dec->PKG_STARTED = 0;
 	}
 	else if(RTP_I & rtpType){	
-		dec->decStream.u64PTS  =DEC_TIMESTAMP;//由VO模块进行帧率控制
-		dec->decStream.pu8Addr = dec->buf->head;
-		dec->decStream.u32Len  = dec->buf->size; 
-		dec->decStream.bEndOfFrame  = FY_TRUE;
-		dec->decStream.bEndOfStream = FY_FALSE;  
-			
-		if(dec->refused == 0)	{
-			ret=FY_MPI_VDEC_SendStream(chn, &(dec->decStream), 0);
-			if(ret !=FY_SUCCESS) printf("%d:may be dec is busy：%x\r\n",chn,ret);
-			dec->waitIfream =0;
-		}
-		else{
-			dec->waitIfream = 1;
-		} 
-		
-		dec_buf_init(dec->buf);
-		dec->PKG_STARTED = 0;
+		if(!dec->hevcPPS->tiles_enabled_flag ||(dec->hevcPPS->tiles_enabled_flag&&(dec->slice_I_counter==dec->hevcPPS->num_tile_columns)) )
+		{
+			dec->decStream.u64PTS  =DEC_TIMESTAMP;//由VO模块进行帧率控制
+			dec->decStream.pu8Addr = dec->buf->head;
+			dec->decStream.u32Len  = dec->buf->size; 
+			dec->decStream.bEndOfFrame  = FY_TRUE;
+			dec->decStream.bEndOfStream = FY_FALSE;  
+
+			if(dec->refused == 0)	{
+				ret=FY_MPI_VDEC_SendStream(chn, &(dec->decStream), 0);
+				 if(ret !=FY_SUCCESS) printf("%d:may be dec is busy：%x\r\n",chn,ret);
+				 dec->waitIfream =0;
+			 }
+			 else{
+				 dec->waitIfream = 1;
+			 } 
+			 dec_buf_init(dec->buf);
+			 dec->PKG_STARTED = 0;
+		 }
 	}	
 	else if(RTP_PKG & rtpType){	
 		dec->decStream.u64PTS  =DEC_TIMESTAMP;//由VO模块进行帧率控制
@@ -106,15 +113,15 @@ int do_decode(decoder_t dec,int chn,int rtpType)
 		dec->decStream.u32Len  = dec->buf->size; 
 		dec->decStream.bEndOfFrame  = FY_TRUE;
 		dec->decStream.bEndOfStream = FY_FALSE;  
-			
+
 		if(dec->refused == 0)	{
 			ret=FY_MPI_VDEC_SendStream(chn, &(dec->decStream), 0);
 			if(ret !=FY_SUCCESS) printf("%d:may be dec is busy：%x\r\n",chn,ret);
 		}
-		dec_buf_init(dec->buf);
-		dec->PKG_STARTED = 0;
+			dec_buf_init(dec->buf);
+			dec->PKG_STARTED = 0;
 	}	
-	
+
 	return 0;
 }
 /*
@@ -230,9 +237,14 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 	u_char * src = bufIN + RTP_HEADLEN;
 	u_char head1 = * src; // 获取第一个字节
 	u_char head2 = * (src + 2); // 获取第3个字节
+	u_char head3 = * (src + 3); // 获取第3个字节
 	u_char nal = ((head1>>1) & 0x3f)	; // 
 	u_char flag = head2  ; // 获取FU header的前三位，判断当前是分包的开始、中间或结束
 	u_char nal_fua =  (head2 & 0x3f ); // FU_A nal  海康的只有I帧  和  P帧
+	u_char first_slice_segment=head2&0x80;
+
+	//这里判断并不严格，只是为单包P帧提供一个标记
+	u_char sliceType= (first_slice_segment==0x80)?((head2>>3)&0x03):(head3>>2)&0x03;
 	
 
 	u_char nalu_header0 = (u_char) (nal_fua<<1)|(*src &0x81);
@@ -241,7 +253,8 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 
 	
 	bufOUT = dec->buf;
-	//printf("%x %x\r\n",nal,nal_fua);
+	//printf("%x %x %02x %02x\r\n",nal,nal_fua,sliceType,head2>>3);
+
 	if(((head1 << 5) & 0x20) | ((*(src+1) >> 3) & 0x1f)){
 		printf("skip \r\n");
 		return 0;
@@ -265,9 +278,15 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 		else if (flag & 0x40){ // 结束
 			pBufTmp = src + 3 ;
 			outLen = len - RTP_HEADLEN - 3 ;
-			if(nal_fua == 0x13) bFinishFrame =RTP_I;
-			else  {
+			if(nal_fua == 0x13){
+				bFinishFrame =RTP_I;
+				if(dec->hevcPPS->tiles_enabled_flag)
+					dec->slice_I_counter++;
+			} 
+			else  if(nal_fua == 0x01){
 				bFinishFrame = RTP_P;
+				if(dec->hevcPPS->tiles_enabled_flag)
+					dec->slice_P_counter++;
 			}
 			if(dec->PKG_STARTED == 0){
 				bFinishFrame=0;
@@ -293,23 +312,47 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 		dec_buf_append(bufOUT,pBufTmp,outLen);
 		switch(nal){
 			case 1:
-				bFinishFrame=RTP_PKG;//单包数据
+				if( sliceType== 0x02){
+					bFinishFrame = RTP_P;
+					if(dec->hevcPPS->tiles_enabled_flag)
+						dec->slice_P_counter++;
+				}
+				else
+					bFinishFrame=RTP_PKG;//单包数据
+
 				break;
 			case 32: // video parameter set (VPS)
 			case 33: // sequence parameter set (SPS)
 			case 34: // picture parameter set (PPS)
 			case 39: // supplemental enhancement information (SEI)
-				bFinishFrame=RTP_SPS;
+				bFinishFrame=RTP_PPS;
+				if(nal==34){
+					if(1==parase_pps(src,len- RTP_HEADLEN,dec->hevcPPS))	{
+						dec->slice_I_counter=0;
+						dec->slice_P_counter=0;
+					}
+				}
 				break;
 			default: // 4.4.1. Single NAL Unit Packets (p24)
 				bFinishFrame=RTP_PKG;//单包数据
 		}
 	}
-		
 	return bFinishFrame;
 }
 
-
+int parase_pps(u_char *buf,int len,HEVCPPS_t hevcPPS)
+{
+	if(len<6) return -1;
+	hevcPPS->tiles_enabled_flag=*(buf+5)&0x80;
+	//printf("titles_enabled_flag:%02x\r\n",hevcPPS->tiles_enabled_flag);
+	if(hevcPPS->tiles_enabled_flag){
+		hevcPPS->num_tile_columns=((*(buf+5))>>3)&0x07;
+		hevcPPS->num_tile_rows=((*(buf+5))>>2)&0x01;
+		//printf("tile->columns:%d tile->rows:%d\r\n",hevcPPS->num_tile_columns,hevcPPS->num_tile_rows);
+		return 1;
+	}
+	return 0;
+}
 
 int make_seqc_right(u_char *bufIN, size_t len, int chn ,decoder_t dec)
 {
@@ -336,8 +379,7 @@ int make_seqc_right(u_char *bufIN, size_t len, int chn ,decoder_t dec)
 	if(dec->timestamp != timestamp){
 		dec->timestamp = timestamp;
 		if(dec->refused == 0)
-		    //dec->time40ms+=39800;
-		    dec->time40ms+=40000;
+		    dec->time40ms+=39800;
 	}
 	
 	return seqcRight;

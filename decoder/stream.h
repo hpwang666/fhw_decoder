@@ -15,7 +15,7 @@ int UnpackRTPH264( u_char *bufIN, size_t len, decoder_t);
 int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t);
 int make_seqc_right(u_char *bufIN, size_t len, int chn ,decoder_t dec);
 int do_decode(decoder_t dec,int chn,int rtpType);
-
+int parase_pps(u_char *buf,int len,HEVCPPS_t hevcPPS);
 #define RTP_PPS 		(0x00000001)
 #define RTP_SPS 		(0x00000002)
 #define RTP_I			(0x00000004)

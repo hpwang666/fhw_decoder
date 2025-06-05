@@ -10,16 +10,22 @@
 #include "shmring.h"
 #include "media.h"
 #include "base64.h"
+#include "zlog.h"
 
 
-#undef  _DEBUG
-//#define _DEBUG
-#ifdef _DEBUG
-	#define debug(...) printf(__VA_ARGS__)
+#undef LOG_HANDLE
+//#define LOG_HANDLE
+#ifdef  LOG_HANDLE
+	#define log_debug(...) 
+    #define log_info(...) {zlog_info(zc,__VA_ARGS__);printf(__VA_ARGS__);printf("\r\n");}
+	#define log_err(...)  {zlog_error(zc,__VA_ARGS__);printf(__VA_ARGS__);printf("\r\n");}
 #else
-	#define debug(...)
-#endif 
+	#define log_debug(...) 
+	#define log_info(...) 
+	#define log_err(...) 
+#endif
 
+extern zlog_category_t *zc;
 struct chnStatus_st chnStatus;
 extern conn_t unixFd;
 
@@ -60,7 +66,7 @@ rtspClient_t init_rtsp_clients(poolList_t list,char *ip,int port,char *user,char
 	if(ret == AIO_AGAIN){
 		c->read->handler = rtsp_connect_handler;
 		c->write->handler = rtsp_connect_handler;//write超时函数
-		add_timer(c->write, 1000);//加入定时器去判断
+		add_timer(c->write, 2000);//将时间改长了一点
 	}
 	if(ret == AIO_OK);
 	return rtspClient;
@@ -83,7 +89,7 @@ static int rtsp_connect_handler(event_t ev)
     rtspClient_t rc = c->data;
 
     if (ev->timedout) {
-        printf("CONN:conn timeout\r\n");
+        log_info("CONN:conn timeout");
 		chnStatus.id = rc->chn;
 		chnStatus.err =1;
 		send_pkg(unixFd,CFG_CHNERR,(u_char *)&chnStatus,sizeof(struct chnStatus_st));
@@ -94,7 +100,7 @@ static int rtsp_connect_handler(event_t ev)
     }
 	
     if (test_connect(c) != AIO_OK) {//handled  by wev->handler
-        debug("TEST_CONN:conn failed\r\n");
+        log_info("TEST_CONN:conn failed");
 		chnStatus.id = rc->chn;
 		chnStatus.err =1;
 		send_pkg(unixFd,CFG_CHNERR,(u_char *)&chnStatus,sizeof(struct chnStatus_st));
@@ -103,7 +109,7 @@ static int rtsp_connect_handler(event_t ev)
 	
 	del_timer(c->write);
 	set_conn_info(c);
-	//printf("Connected,client=%s:%d peer=%s:%d\n", c->local_ip,c->local_port,c->peer_ip,c->peer_port);
+	log_info("Connected,client=%s:%d peer=%s:%d", c->local_ip,c->local_port,c->peer_ip,c->peer_port);
 	
 	c->write->ready = 1;//可写
 	add_event(c->read,READ_EVENT);
@@ -144,14 +150,14 @@ static int rtsp_reconnect_peer(event_t ev)
 	
     if(rc == 0)
     {
-        debug("RECONN:already ok?");
+        log_info("RECONN:already ok?");
 		add_event(c->read, READ_EVENT);
 		return AIO_OK;
     }
 	
 	if(rc == -1 && (CONN_WOULDBLOCK || CONN_INPROGRESS))//非阻塞都会执行到这一步
     {
-        debug("RECONN:need check\r\n");
+        log_info("RECONN:need check");
 		c->write->handler = rtsp_connect_handler;
 		add_event(c->write, WRITE_EVENT);
 		add_timer(c->write, 5000);
@@ -177,7 +183,7 @@ static int rtsp_read_handle(event_t ev)
 	
 	if (ev->timedout) {//数据读取超时
 		//close_conn(c);//此处不能close，会释放conn，引起错误指针
-		printf("read0 timeout\r\n");
+		log_info("read timeout");
 		ev->timedout = 0;
 		rc->success = 0;
 		cc=(u_char *)(rc->sess->url)+sizeof(struct str_st)+rc->sess->url->size+1;
@@ -220,7 +226,7 @@ static int rtsp_read_handle(event_t ev)
 		if(r==0){
 			//只要不是主动teardown的，就都要重连
 			//free_rtsp_clients(c->data);
-			debug("peer conn closed:%s:%d\n",c->peer_ip,c->peer_port);
+			log_info("peer conn closed:%s:%d\n",c->peer_ip,c->peer_port);
 			rc->success = 0;
 			cc=(u_char *)(rc->sess->url)+sizeof(struct str_st)+rc->sess->url->size+1;
 			//printf("%c,%c\n",*(cc-2),*(cc-3));//显示url最后两个字母
@@ -262,9 +268,9 @@ static int rtsp_read_handle(event_t ev)
 			}
 			
 			if(rtspType == RTSP_TXT){
-				debug("<<<\n");
+				log_debug("<<<\n");
 				for(rep=0;rep<rtpPkgLen;rep++)
-					debug("%c",*(buf->head+rep));
+					log_debug("%c",*(buf->head+rep));
 			
 				rep = do_response(rc,buf->head,buf->size);
 				switch (rep){
@@ -345,8 +351,8 @@ static int send_option(rtspClient_t rc)
 	str_t_append(opt,"\r\n\r\n",4);
 	rc->do_next = send_describe;
 	
-	debug(">>opt\n");
-	debug("%s",opt->data);
+	log_debug(">>opt\n");
+	log_debug("%s",opt->data);
 	
 	c->send(c,opt->data,opt->len);
 	if(c->write->ready) {
@@ -389,8 +395,8 @@ static int send_describe(rtspClient_t rc)
 	
 	rc->do_next = send_setup;
 	
-	debug(">>>>desr\n");
-	debug("%s",opt->data);
+	log_debug(">>>>desr\n");
+	log_debug("%s",opt->data);
 	c->send(c,opt->data,opt->len);
 	if(c->write->ready) {
 		//printf("write ok \n");
@@ -416,7 +422,7 @@ static int send_setup(rtspClient_t rc)
 		if(rc->sess->contentBase){
 			if(str_nstr((u_char *)rc->sess->control->data,(char *)rc->sess->contentBase->data,rc->sess->control->len))
 			{
-				debug(">>>found base url in control\n");
+				log_debug(">>>found base url in control\n");
 				str_t_cat(opt,rc->sess->control);
 			}
 			else {
@@ -441,8 +447,8 @@ static int send_setup(rtspClient_t rc)
 	
 	rc->do_next = send_play;
 	
-	debug(">>>>setup\n");
-	debug("%s",opt->data);
+	log_debug(">>>>setup\n");
+	log_debug("%s",opt->data);
 	c->send(c,opt->data,opt->len);
 	if(c->write->ready) {
 		//printf("write ok \n");
@@ -474,8 +480,8 @@ static int send_play(rtspClient_t rc)
 	
 	rc->do_next =NULL;
 	rc->success = 1;
-	debug(">>>>play\n");
-	debug("%s",opt->data);
+	log_debug(">>>>play\n");
+	log_debug("%s",opt->data);
 	c->send(c,opt->data,opt->len);
 	if(c->write->ready) {
 		//printf("write ok \n");
@@ -507,8 +513,8 @@ static int send_teardown(rtspClient_t rc)
 	
 	rc->do_next =free_rtsp_clients;
 	
-	//debug(">>>>\n");
-	//debug("%s",opt->data);
+	//log_debug(">>>>\n");
+	//log_debug("%s",opt->data);
 	c->send(c,opt->data,opt->len);
 	if(c->write->ready) {
 		//printf("write ok \n");
@@ -644,6 +650,10 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 			str_t_append(rc->sess->contentBase,head,tail-head);
 			}
 	}
+
+	memset(ppsB64,'\0',128);
+	memset(spsB64,'\0',128);
+	memset(vpsB64,'\0',128);
 	head = (char *)str_nstr((u_char*)data,"sprop-parameter-sets",len);
 	if(head){
 		head +=strlen("sprop-parameter-sets")+1;
@@ -668,6 +678,19 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 	}
 
 	//以下是针对H265获取 SPS PPS
+	head = (char *)str_nstr((u_char*)data,"sprop-vps",len);
+	if(head){
+		head +=strlen("sprop-vps")+1;
+		tail = (char*)str_nstr((u_char *)head,";",128);
+		if(tail){
+			memcpy( vpsB64,head,tail-head);
+			str_t_ndup(rc->pool,rc->sess->vps,128);
+			decodeLen=b64_decode_ex((u_char *)rc->sess->vps->data+16,vpsB64,strlen(vpsB64));
+			rc->sess->vps->len =decodeLen+16; 
+			send_pkg(unixFd, rc->chn,rc->sess->vps->data,rc->sess->vps->len );
+			printf("get vps\r\n");
+		}
+	}
 	head = (char *)str_nstr((u_char*)data,"sprop-sps",len);
 	if(head){
 		head +=strlen("sprop-sps")+1;
@@ -692,19 +715,6 @@ static int do_response(rtspClient_t rc,u_char* data, size_t len)
 				send_pkg(unixFd, rc->chn,rc->sess->sps->data,rc->sess->sps->len );
 				send_pkg(unixFd, rc->chn,rc->sess->pps->data,rc->sess->pps->len );
 				printf("get sps  pps \r\n");
-			}
-		}
-		head = (char *)str_nstr((u_char*)data,"sprop-vps",len);
-		if(head){
-			head +=strlen("sprop-vps")+1;
-			tail = (char*)str_nstr((u_char *)head,";",128);
-			if(tail){
-				memcpy( vpsB64,head,tail-head);
-				str_t_ndup(rc->pool,rc->sess->vps,128);
-				decodeLen=b64_decode_ex((u_char *)rc->sess->vps->data+16,vpsB64,strlen(vpsB64));
-				rc->sess->vps->len =decodeLen+16; 
-				send_pkg(unixFd, rc->chn,rc->sess->vps->data,rc->sess->vps->len );
-				printf("get vps\r\n");
 			}
 		}
 	}
@@ -793,6 +803,6 @@ static void generate_auth(rtspClient_t rc, char* cmd)
 		str_t_sprintf(base64In,"%s:%s",rc->user->data,rc->passwd->data);
 		b64_encode(base64In->data, (char *)base64Out->data,base64In->len);
 		str_t_sprintf(rc->sess->auth,"Basic %s",base64Out->data);
-		debug("%s\n",rc->sess->auth);
+		log_debug("%s",(char*)rc->sess->auth);
 	}
 }

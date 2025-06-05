@@ -1,6 +1,6 @@
 mac:02-4D-97-64-E7-D2
-address:172.16.10.58
-gateway:172.16.10.1
+address:192.168.1.158
+gateway:192.168.1.1
 netmask:255.255.255.0
 hostname:0.0.0.0
 id:1q2w3e4r5fbb

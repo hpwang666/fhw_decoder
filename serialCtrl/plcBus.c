@@ -10,11 +10,17 @@
 
 
 #undef MODBUS_PRINT
-//#define MODBUS_PRINT
+#define MODBUS_PRINT
 
 
 //读取长度  单位为字
-#define MEMOBUS_READ_LEN (3)
+#define MEMOBUS_READ_LEN (1)
+
+//从站通讯地址
+#define MEMOBUS_SLAVE_ADDR (7)
+
+//是否打开高度变焦控制
+//#define MEMOBUS_HEIGHT
 
 
 static int plc_connect_handler(event_t ev);
@@ -184,19 +190,20 @@ int handle_memobus(conn_t c,int len)
 {
 	int cmd;	
 	struct custom_st custom;
+#ifdef MEMOBUS_HEIGHT
 	static int zoomCmd=-1;
 	int tempHeight;
 	uint16_t height_H;
+#endif
 	static int voCmd=-1;
 	buf_t buf=c->readBuf;
 	if(len==(3+2+2*MEMOBUS_READ_LEN )){
-		if( (buf->head[4]&0x1E)^voCmd){
-			voCmd=buf->head[4]&0x1E;
+		if( (buf->head[4]&0x03)^voCmd){
+			voCmd=buf->head[4]&0x03;
 			switch (voCmd){
-				case 0x10:cmd=3;break;
-				case 0x02:cmd=1;break;
-				case 0x04:cmd=2;break;
-				case 0x08:cmd=4;break;
+				case 0x00:cmd=3;break;
+				case 0x01:cmd=1;break;
+				case 0x02:cmd=2;break;
 				default:cmd=3;break;
 			}
 			custom.ch =0; 
@@ -204,6 +211,7 @@ int handle_memobus(conn_t c,int len)
 			custom.stop =cmd;//0x01--LEFT 0X02--RIGHT 0X03--STOP 
 			queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 		}
+#ifdef  MEMOBUS_HEIGHT
 		if(buf->head[5]&0x80){//负数，在地平面之下  3300是地上的高度
 			height_H=(buf->head[5]<<8)&0xff00;
 			tempHeight = 5200+(0xffff-height_H-buf->head[6]);
@@ -229,6 +237,7 @@ int handle_memobus(conn_t c,int len)
 			custom.stop =0;//这里不需要 
 			queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 		}
+#endif
 	}
 	return 0;
 }
@@ -237,13 +246,16 @@ int memobus_write_handle(event_t ev)
 	int n;
 	conn_t c =(conn_t) ev->data;
 	u_char plcBus[32];
-	plcBus[0]=0x04;
+	plcBus[0]=MEMOBUS_SLAVE_ADDR ;
 	plcBus[1]=0x03;
 	plcBus[2]=(env->r0>>8)&0xff;
 	plcBus[3]=(env->r0)&0xff;
 	plcBus[4]=0x00;
 	plcBus[5]=MEMOBUS_READ_LEN ;//读取多少个字
 	*(uint16_t*)(plcBus+ 6) = check_crc(plcBus, 6);
+	//for(n=0;n<8;n++){
+	//	printf("%02x ",plcBus[n]);
+	//}
 	//printf("I have sent 8 bytes\r\n");
 	n = c->send(c,plcBus,8);
 	if(!c->write->ready) printf("only send %d bytes\n",n);
@@ -304,7 +316,9 @@ int parseModbus(conn_t c,int len)
 		printf("%02x ",*(modbusSession->holdReg+i));
 	printf("\r\n");
 #endif
-	handle_modbus(modbusSession);
+	if(modbusHeader->opt==0x06 ||modbusHeader->opt==0x10)//写寄存器之后才会进行vo ptz操作
+		handle_modbus(modbusSession);
+
 	return pkgLen;
 }
 int responseModbus( modbusSession_t  modbusSession)
@@ -384,7 +398,7 @@ int handle_modbus(modbusSession_t modbusSession)
 {
 	int cmd;	
 	struct custom_st custom;
-#if 1
+#if 0
 	static int zoomCmd=-1;
 	int tempHeight;
 	uint16_t height_H;
@@ -403,7 +417,7 @@ int handle_modbus(modbusSession_t modbusSession)
 		custom.stop =cmd;//0x01--LEFT 0X02--RIGHT 0X03--STOP 
 		queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 	}
-#if 1
+#if 0
 	if(modbusSession->holdReg[2]&0x80){//负数，在地平面之下  2000是地上的高度
 		height_H=(modbusSession->holdReg[2]<<8)&0xff00;
 		tempHeight =3200+(0xffff-height_H-modbusSession->holdReg[3]);
@@ -433,6 +447,39 @@ int handle_modbus(modbusSession_t modbusSession)
 	return 0;
 }
 
+static int readCamEvents(event_t ev)
+{
+	queueNode_t tmp;
+	modbusSession_t modbusSession =(modbusSession_t )ev->data;
+
+	if (ev->timedout) {//
+        //printf("HTTP WRITE:read timeout\r\n");
+		//close_conn(c);//此处不能close，会释放conn，引起错误指针
+		ev->timedout = 0;
+		
+		//return AIO_ERR;
+    }
+	
+	tmp = queue_get(env->eventQueue);//接受相机推送过来的事件
+	if(tmp){
+		event2plc_t event2plc= (event2plc_t)(tmp->data);
+		printf("event ch %d\r\n",event2plc->ch);
+		switch( event2plc->ch){
+			case 10:event2plc->event==0x01?(modbusSession->holdReg[0]|=0x01):(modbusSession->holdReg[0]&=~0x01);break;//左行海侧报警
+			case 5:event2plc->event==0x01?(modbusSession->holdReg[0]|=0x02):(modbusSession->holdReg[0]&=~0x02);break;//左行陆侧报警
+			case 11:event2plc->event==0x01?(modbusSession->holdReg[0]|=0x04):(modbusSession->holdReg[0]&=~0x04);break;//右行海侧报警
+			case 6:event2plc->event==0x01?(modbusSession->holdReg[0]|=0x08):(modbusSession->holdReg[0]&=~0x08);break;//右行陆侧报警
+		}
+		queue_cache(env->eventQueue,tmp);
+	} 
+modbusSession->holdReg[0]|=0x08;
+	add_timer(modbusSession->modbusEv,80);
+
+	return 0;
+}
+
+
+
 int initPlcBus()
 {
 	conn_t  pc,lc;
@@ -458,6 +505,11 @@ int initPlcBus()
 		modbusSession_t modbusSession =(modbusSession_t ) calloc(1,sizeof(struct modbusSession_st));
 		modbusSession->modbusHeader =(modbusHeader_t) calloc(1,sizeof(struct modbusHeader_st));
 		modbusSession->sendBuf= buf_new(2048);
+		modbusSession->modbusEv=(event_t)calloc(1,sizeof(struct event_st));
+		modbusSession->modbusEv->handler=readCamEvents;
+		modbusSession->modbusEv->data=modbusSession;
+		add_timer(modbusSession->modbusEv,100);
+
 		lc->ls_arg = modbusSession;//这里利用lc将参数最终传递给所有的c->data
 	}
 
@@ -469,6 +521,9 @@ int releasePlcBus()
 		conn_t c = env->modbusListenConn;
 		modbusSession_t modbusSession = (modbusSession_t )c->ls_arg;
 		modbusHeader_t modbusHeader = modbusSession->modbusHeader;
+		if(modbusSession->modbusEv->timer_set)
+			del_timer(modbusSession->modbusEv);
+		free(modbusSession->modbusEv);		
 		buf_free(modbusSession->sendBuf);
 		free(modbusHeader);
 		free(modbusSession);

@@ -3,11 +3,11 @@ include ../Makefile.pub
 INCLUDES=$(wildcard *.h)
 DEFS =
 CFLAGS := -Wall $(DEFS) -I.  -g 
-CFLAGS +=  -I./   -I../connet/ -I../connet/util -I../sqlite3/output/include
+CFLAGS +=  -I./   -I../connet/ -I../connet/util -I../zlog/output/include -I../sqlite3/output/include
 CXXFLAGS:=$(CFLAGS)
 CCFLAGS:=$(CFLAGS)
-LIBPATH := -L../sqlite3/output/lib
-LIBS := -lsqlite3 -lpthread ../connet/connet.a
+LIBPATH := -L../zlog/output/lib -L../sqlite3/output/lib
+LIBS := -lsqlite3 -lzlog -lpthread ../connet/connet.a
 INSTALL_DIR=/home/work/nfs/nvr
 IMG_DIR=/home/work/fhw/main/user_fhw
 

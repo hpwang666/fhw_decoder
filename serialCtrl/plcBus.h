@@ -7,6 +7,8 @@
 #include <signal.h>
 
 
+#include "connet.h"
+
 typedef struct modbusHeader_st *modbusHeader_t;
 typedef struct modbusSession_st *modbusSession_t;
 struct modbusHeader_st{
@@ -15,12 +17,13 @@ struct modbusHeader_st{
 	uint16_t length;
 	u_char flag;
 	u_char opt;//功能码
-	uint16_t optLen;
-	uint16_t index;
+	uint16_t optLen;//操作的数据长度
+	uint16_t index;//操作的起始偏移量
 };
 
 struct modbusSession_st{
 	modbusHeader_t modbusHeader;
+	event_t modbusEv;
 	buf_t sendBuf;
 	u_char holdReg[255];//保持寄存器数据
 };
