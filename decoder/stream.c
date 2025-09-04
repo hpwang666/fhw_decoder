@@ -243,9 +243,11 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 	u_char nal_fua =  (head2 & 0x3f ); // FU_A nal  海康的只有I帧  和  P帧
 	u_char first_slice_segment=head2&0x80;
 
-	//这里判断并不严格，只是为单包P帧提供一个标记
-	u_char sliceType= (first_slice_segment==0x80)?((head2>>3)&0x03):(head3>>2)&0x03;
-	
+	//这里判断并不严格，只是为单包P帧提供一个标记 slice_2
+	//u_char sliceType= (first_slice_segment==0x80)?((head2>>3)&0x03):(head3>>2)&0x03;
+
+	//slice_3	
+	u_char sliceType= (first_slice_segment==0x80)?((head2>>3)&0x03):(head3&0x03);
 
 	u_char nalu_header0 = (u_char) (nal_fua<<1)|(*src &0x81);
 	u_char nalu_header1 = *(src+1);	  

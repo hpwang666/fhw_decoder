@@ -239,7 +239,7 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 			i++;
 		}
 		allChns=i;
-		printf("plc_chn:%d\r\n",i);
+		printf("plc_chn:%d cams:%d\r\n",chn,i);
 		switch (i) {
 			case 1 :voMutx=1;break;
 			case 2 :voMutx=2;break;

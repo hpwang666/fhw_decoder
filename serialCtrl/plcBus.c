@@ -8,19 +8,21 @@
 #include "connet.h"
 #include "plcBus.h"
 
+#include "modbusCRC.h"
 
 #undef MODBUS_PRINT
 #define MODBUS_PRINT
 
 
 //读取长度  单位为字
-#define MEMOBUS_READ_LEN (1)
+#define MEMOBUS_READ_LEN (4)
 
 //从站通讯地址
-#define MEMOBUS_SLAVE_ADDR (7)
+#define MEMOBUS_SLAVE_ADDR (6)
 
 //是否打开高度变焦控制
-//#define MEMOBUS_HEIGHT
+#define MEMOBUS_HEIGHT
+#define  MEMOBUS_PRINT
 
 
 static int plc_connect_handler(event_t ev);
@@ -67,11 +69,6 @@ int memobus_read_handle(event_t ev)
 			// 00 03 06 00 00 00 00 01 4d 22 33
 			//   功能码03 字符长度06 也就是3个字
 			handle_memobus(c,r);
-#if 0
-			for(i=0;i<r;i++)
-				printf("%02x ",buf->head[i]);
-			printf("\r\n");
-#endif
 			buf_consume(buf, r);
 			if(ev->ready){
 				printf("ready\n");
@@ -190,20 +187,39 @@ int handle_memobus(conn_t c,int len)
 {
 	int cmd;	
 	struct custom_st custom;
+	static uint16_t tempCrc=0;
 #ifdef MEMOBUS_HEIGHT
 	static int zoomCmd=-1;
+	int caluHeight;
 	int tempHeight;
 	uint16_t height_H;
 #endif
 	static int voCmd=-1;
+
 	buf_t buf=c->readBuf;
+
+
+#ifdef MEMOBUS_PRINT
+	int i=0;
+	uint16_t crc = *(uint16_t* )(buf->head+3+MEMOBUS_READ_LEN*2 );
+	if(crc^tempCrc){
+		printf("%04x: ",crc);
+		for(i=0;i<len;i++)
+			printf("%02x ",buf->head[i]);
+		printf("\r\n");
+		tempCrc = crc;
+	}
+#endif
+
+
 	if(len==(3+2+2*MEMOBUS_READ_LEN )){
-		if( (buf->head[4]&0x03)^voCmd){
-			voCmd=buf->head[4]&0x03;
+		if( (buf->head[4]&0x1f)^voCmd){
+			voCmd=buf->head[4]&0x1f;
 			switch (voCmd){
-				case 0x00:cmd=3;break;
-				case 0x01:cmd=1;break;
-				case 0x02:cmd=2;break;
+				case 0x10:cmd=3;break;
+				case 0x02:cmd=1;break;
+				case 0x04:cmd=2;break;
+				case 0x08:cmd=4;break;
 				default:cmd=3;break;
 			}
 			custom.ch =0; 
@@ -220,12 +236,11 @@ int handle_memobus(conn_t c,int len)
 			height_H=(buf->head[5]<<8)&0xff00;
 			tempHeight = 5200-(height_H+buf->head[6]);
 		}
-		printf("height0:%d\r\n",tempHeight);
-		tempHeight=(tempHeight/32)&0xff;
-		printf("height1:%d\r\n",tempHeight);
-		if( tempHeight^zoomCmd){
-			zoomCmd=tempHeight;
-			cmd = tempHeight;
+		caluHeight=(tempHeight/52)&0xff;
+		if(  caluHeight^zoomCmd){
+			zoomCmd= caluHeight;
+			printf("temHeight:%d caluHeight:%d\r\n",tempHeight,caluHeight);
+			cmd =  caluHeight;
 			custom.ch = 0;	
 			custom.cmd = 0xaa;
 			custom.stop =cmd; 
@@ -311,10 +326,15 @@ int parseModbus(conn_t c,int len)
 	}
 #ifdef MODBUS_PRINT 
 	int i;
-	printf("hold reg: ");
-	for(i=0;i<10;i++)
-		printf("%02x ",*(modbusSession->holdReg+i));
-	printf("\r\n");
+	int crc16= modbus_CRC16(modbusSession->holdReg,10);
+	if(crc16!=modbusSession->crc){
+		//printf("crc:%04x %04x\r\n",crc16,check_crc(modbusSession->holdReg,10));
+		printf("hold reg: ");
+		for(i=0;i<10;i++)
+			printf("%02x ",*(modbusSession->holdReg+i));
+		printf("\r\n");
+		modbusSession->crc=crc16;
+	}
 #endif
 	if(modbusHeader->opt==0x06 ||modbusHeader->opt==0x10)//写寄存器之后才会进行vo ptz操作
 		handle_modbus(modbusSession);
@@ -398,8 +418,9 @@ int handle_modbus(modbusSession_t modbusSession)
 {
 	int cmd;	
 	struct custom_st custom;
-#if 0
+#if 1
 	static int zoomCmd=-1;
+	int caluHeight;
 	int tempHeight;
 	uint16_t height_H;
 #endif
@@ -417,21 +438,20 @@ int handle_modbus(modbusSession_t modbusSession)
 		custom.stop =cmd;//0x01--LEFT 0X02--RIGHT 0X03--STOP 
 		queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 	}
-#if 0
+#if 1
 	if(modbusSession->holdReg[2]&0x80){//负数，在地平面之下  2000是地上的高度
 		height_H=(modbusSession->holdReg[2]<<8)&0xff00;
-		tempHeight =3200+(0xffff-height_H-modbusSession->holdReg[3]);
+		tempHeight =1300+(0xffff-height_H-modbusSession->holdReg[3]);
 	}
 	else{
 		height_H=(modbusSession->holdReg[2]<<8)&0xff00;
-		tempHeight =3200-(height_H+modbusSession->holdReg[3]);
+		tempHeight =1300-(height_H+modbusSession->holdReg[3]);
 	}
-	//printf("height0:%d\r\n",tempHeight);
-	tempHeight=(tempHeight/64)&0xff;
-	//printf("height1:%d\r\n",tempHeight);
-	if( tempHeight^zoomCmd){
-		zoomCmd=tempHeight;
-		cmd = tempHeight;
+	caluHeight=(tempHeight/64)&0xff;
+	if( caluHeight^zoomCmd){
+		zoomCmd=caluHeight;
+		printf("temHeight:%d caluHeight:%d\r\n",tempHeight,caluHeight);
+		cmd =caluHeight;
 		custom.ch = 0;	
 		custom.cmd = 0xaa;
 		custom.stop =cmd; //针对2507 这里从0--250 代表充1-25倍变焦

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <signal.h>
 
 
@@ -26,6 +27,7 @@ struct modbusSession_st{
 	event_t modbusEv;
 	buf_t sendBuf;
 	u_char holdReg[255];//保持寄存器数据
+	uint16_t crc;   		//寄存器10个字节校验值
 };
 
 

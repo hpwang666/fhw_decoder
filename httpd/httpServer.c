@@ -470,6 +470,16 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 		
 	}
 
+	for(i=0;i<3;i++){
+		sprintf(stream,"camchn%d",i+1);
+		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
+		if(!param) {
+			printf("param %s not found\r\n",stream);
+			return -1;
+		}
+		printf("update camera set address = \"%s\" where id = %d",param,i+1);
+		
+	}
 
 	sprintf(stream,"left");
 	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
@@ -876,7 +886,7 @@ void make_http_response_head(u_char* buf,uint8_t type,uint32_t len)
 	else if (type == PTYPE_FLASH)	head = RES_FLASHHEAD_OK;
 	else if (type == PTYPE_MPEG)	head = RES_MPEGHEAD_OK;
 	else if (type == PTYPE_PDF)	  head = RES_PDFHEAD_OK;
-
+	else if (type == PTYPE_SCRIPT)	  head =RES_SCRIPTHEAD_OK	;
 	sprintf(tmp,"%d", len);	
 	strcpy((char*)buf, head);
 	strcat((char*)buf, tmp);
@@ -1032,6 +1042,45 @@ void static_string_page_respond(conn_t c,u_char* http_response,char * h_file)
 	}
 }
 
+
+
+void static_script_page_respond(conn_t c,u_char* http_response,char * h_file)
+{
+	uint32_t file_len=0;	
+	uint32_t send_len=0;
+	uint8_t readBuf[1024*256];
+		printf("try to open %s\r\n",h_file);
+	FILE *fp = fopen(h_file,"r");
+	if(fp == NULL){
+		printf("can not open %s\r\n",h_file);
+		memcpy(http_response, ERROR_HTML_PAGE, sizeof(ERROR_HTML_PAGE));//404
+		c->send(c, (uint8_t *)http_response, strlen((char const*)http_response));
+		return;
+	}
+	file_len = fread(readBuf,1,sizeof(readBuf),fp);
+	printf("file len %d \r\n",file_len);
+	fclose(fp);
+	make_http_response_head(http_response, PTYPE_SCRIPT,file_len);
+	c->send(c,http_response,strlen((char const*)http_response));//先发响应头
+	send_len=0;
+	while(file_len)
+	{
+		if(file_len>4096)
+		{
+			c->send(c, (uint8_t *)readBuf+send_len, 4096);
+			send_len+=4096;
+			file_len-=4096;
+			usleep(200);
+		}
+		else
+		{
+			c->send(c, (uint8_t *)readBuf+send_len, file_len);
+			send_len+=file_len;
+			file_len-=file_len;
+		} 
+	}
+}
+
 /**
 *@brief		接收http请求报文并发送http响应
 *@param		s: http服务器socket
@@ -1094,6 +1143,22 @@ int proc_http(conn_t c, uint8_t * buf,uint32_t len)
 			else if(strcmp(name,"/scene")==0)//获取解码器分屏的参数
 			{
 				static_string_page_respond(c,http_response,SCENE_HTML);
+			}	
+			else if(strcmp(name,"/test")==0)//获取解码器分屏的参数
+			{
+				static_string_page_respond(c,http_response,"htdocs/test.html");
+			}	
+			else if(strcmp(name,"/js/jquery-1.11.0.min.js")==0)//获取解码器分屏的参数
+			{
+				static_script_page_respond(c,http_response,"htdocs/js/jquery-1.11.0.min.js");
+			}	
+			else if(strcmp(name,"/js/common.js")==0)//获取解码器分屏的参数
+			{
+				static_script_page_respond(c,http_response,"htdocs/js/common.js");
+			}	
+			else if(strcmp(name,"/js/jquery.md5.js")==0)//获取解码器分屏的参数
+			{
+				static_script_page_respond(c,http_response,"htdocs/js/jquery.md5.js");
 			}	
 			else
 			{

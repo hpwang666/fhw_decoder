@@ -19,6 +19,7 @@
 #define		PTYPE_FLASH			5				/**< FLASH file. */
 #define		PTYPE_MPEG			6				/**< MPEG file.  */
 #define		PTYPE_PDF			7				/**< PDF file.   */
+#define		 PTYPE_SCRIPT       8				/**< script file.   */
 
 #ifdef USE_FATFS_FLASH
 #define WEB_ROOT_PATH 	"/.sys"
@@ -30,6 +31,10 @@
 
 /* Response header for HTML*/
 #define RES_HTMLHEAD_OK	"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: "
+
+
+/* Response header for SCRIPT*/
+#define RES_SCRIPTHEAD_OK	"HTTP/1.1 200 OK\r\nContent-Type: application/javascript\r\nContent-Length: "
 
 /* Response head for TEXT */
 #define RES_TEXTHEAD_OK	"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: "

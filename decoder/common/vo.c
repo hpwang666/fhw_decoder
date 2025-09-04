@@ -436,9 +436,10 @@ FY_S32 vo_get_chnRect(VO_CHN voChn, SAMPLE_VO_MODE_E enMode, SIZE_S *pstSize, RE
 
     if (VO_MODE_1L_1R == enMode) {
         u32CellW = ALIGN_BACK(pstSize->u32Width/u32Square,  16);
-        u32CellH = ALIGN_BACK(pstSize->u32Height/2, 2);
-        s32XO = ALIGN_BACK((pstSize->u32Width - u32CellW*u32Square)/2, 2);
-        s32YO = ALIGN_BACK((pstSize->u32Height - u32CellH)/2, 2);
+		//这里将两画面铺满了屏幕
+        u32CellH = ALIGN_BACK(pstSize->u32Height, 2);//ALIGN_BACK(pstSize->u32Height/2, 2);
+        s32XO = 0;//ALIGN_BACK((pstSize->u32Width - u32CellW*u32Square)/2, 2);
+        s32YO = 0;//ALIGN_BACK((pstSize->u32Height - u32CellH)/2, 2);
     } else {
         u32CellW = ALIGN_BACK(pstSize->u32Width/u32Square,  16);
         u32CellH = ALIGN_BACK(pstSize->u32Height/u32Square, 2);
@@ -452,9 +453,11 @@ FY_S32 vo_get_chnRect(VO_CHN voChn, SAMPLE_VO_MODE_E enMode, SIZE_S *pstSize, RE
             if (0 == voChn) {
                 pstRect->s32X = s32XO;
                 pstRect->s32Y = s32YO;
+				printf("%d %d %d %d\r\n ", s32XO,s32YO, u32CellW, u32CellH);
                 pstRect->u32Width = u32CellW;
                 pstRect->u32Height = u32CellH;
             } else if (1 == voChn){
+				printf("%d %d %d %d\r\n ", s32XO,s32YO, u32CellW, u32CellH);
                 pstRect->s32X = s32XO + u32CellW;
                 pstRect->s32Y = s32YO;
                 pstRect->u32Width = u32CellW;
