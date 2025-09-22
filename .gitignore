@@ -26,6 +26,9 @@ connet/
 include/
 rsync/
 zlog/output
+httpd/htdocs/js/
+httpd/htdocs/test.html
+
 
 ### IntelliJ IDEA ###
 .idea

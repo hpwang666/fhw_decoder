@@ -8,11 +8,14 @@
     function $(id) {
       return document.getElementById(id)
     }
+    
 
     function postConfigCallback(o) {
+      setTvwall();
       if ($('txtversion')) $('txtversion').innerText = o['version']
       for (var i = 1; i <= 32; i++) {
         if ($('txtstream' + i)) $('txtstream' + i).value = o['stream' + i]
+        if ($('txtsel' + i)) $('txtsel' + i).value = o['sel' + i]
       }
       if ($('txtleft')) $('txtleft').value = o['left']
       if ($('txtright')) $('txtright').value = o['right']
@@ -36,7 +39,7 @@
 
   <body style="padding: 0px; margin: auto">
     <div style="width: 100vw;min-height: 100vh;display: flex;flex-direction: column;justify-content: center;align-items: center;">
-      <h1 style="width: 100%;max-width: 960px;text-align: center;padding: 0px;margin: 0px;">
+      <h1 style="width: 100%;max-width: 1160px;text-align: center;padding: 0px;margin: 0px;">
         Welcome to FHJT webserver
       </h1>
       <span id="txtversion" name="version"></span>
@@ -51,78 +54,15 @@
       </fieldset>
       <fieldset style="padding-top: 10px">
         <legend>Settings</legend>
-        <form action="geshihua.cgi" method="POST" style="max-width: 960px;display: flex;flex-direction: column;flex-wrap: wrap;">
-          <div style="min-width: 452px;max-width: 960px;display: flex;flex-direction: row;flex-wrap: wrap;justify-content: space-between;">
-            <div style="min-width: 451px">
+        <form action="geshihua.cgi" method="POST" style="max-width: 1160px;display: flex;flex-direction: column;flex-wrap: wrap;">
+          <div style="min-width: 452px;max-width: 1110px;display: flex;flex-direction: row;flex-wrap: wrap;justify-content: space-between;">
+            <div style="min-width: 581px">
               <div style="padding: 0px 10px; border: 1px dotted #66b3ff" id="chlist">
-                <p>
-                  <span><label>ch 1:</label><input type="text" id="txtstream1" name="stream1" size="16" class="s-inputxt" /></span>
-                  <span><label>ch17:</label><input type="text" id="txtstream17" name="stream17" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 2:</label><input type="text" id="txtstream2" name="stream2" size="16" class="s-inputxt" /></span>
-                  <span><label>ch18:</label><input type="text" id="txtstream18" name="stream18" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 3:</label><input type="text" id="txtstream3" name="stream3" size="16" class="s-inputxt" /></span>
-                  <span><label>ch19:</label><input type="text" id="txtstream19" name="stream19" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 4:</label><input type="text" id="txtstream4" name="stream4" size="16" class="s-inputxt" /></span>
-                  <span><label>ch20:</label><input type="text" id="txtstream20" name="stream20" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 5:</label><input type="text" id="txtstream5" name="stream5" size="16" class="s-inputxt" /></span>
-                  <span><label>ch21:</label><input type="text" id="txtstream21" name="stream21" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 6:</label><input type="text" id="txtstream6" name="stream6" size="16" class="s-inputxt" /></span>
-                  <span><label>ch22:</label><input type="text" id="txtstream22" name="stream22" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 7:</label><input type="text" id="txtstream7" name="stream7" size="16" class="s-inputxt" /></span>
-                  <span><label>ch23:</label><input type="text" id="txtstream23" name="stream23" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 8:</label><input type="text" id="txtstream8" name="stream8" size="16" class="s-inputxt" /></span>
-                  <span><label>ch24:</label><input type="text" id="txtstream24" name="stream24" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch 9:</label><input type="text" id="txtstream9" name="stream9" size="16" class="s-inputxt" /></span>
-                  <span><label>ch25:</label><input type="text" id="txtstream25" name="stream25" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch10:</label><input type="text" id="txtstream10" name="stream10" size="16" class="s-inputxt" /></span>
-                  <span><label>ch26:</label><input type="text" id="txtstream26" name="stream26" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch11:</label><input type="text" id="txtstream11" name="stream11" size="16" class="s-inputxt" /></span>
-                  <span><label>ch27:</label><input type="text" id="txtstream27" name="stream27" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch12:</label><input type="text" id="txtstream12" name="stream12" size="16" class="s-inputxt" /></span>
-                  <span><label>ch28:</label><input type="text" id="txtstream28" name="stream28" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch13:</label><input type="text" id="txtstream13" name="stream13" size="16" class="s-inputxt" /></span>
-                  <span><label>ch29:</label><input type="text" id="txtstream29" name="stream29" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch14:</label><input type="text" id="txtstream14" name="stream14" size="16" class="s-inputxt" /></span>
-                  <span><label>ch30:</label><input type="text" id="txtstream30" name="stream30" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch15:</label><input type="text" id="txtstream15" name="stream15" size="16" class="s-inputxt" /></span>
-                  <span><label>ch31:</label><input type="text" id="txtstream31" name="stream31" size="16" class="s-inputxt" /></span>
-                </p>
-                <p>
-                  <span><label>ch16:</label><input type="text" id="txtstream16" name="stream16" size="16" class="s-inputxt" /></span>
-                  <span><label>ch32:</label><input type="text" id="txtstream32" name="stream32" size="16" class="s-inputxt" /></span>
-                </p>
+               
               </div>
             </div>
 
-            <div style="min-width: 451px" class="automt">
+            <div style="min-width: 450px;" class="automt">
               <div style="padding: 0 10px; border: 1px dotted #66b3ff">
                 <p>
                   <span>
@@ -209,40 +149,105 @@
       </fieldset>
     </div>
 </template>
-  <script type="text/javascript" src="post_config.js"></script>
-  <script>
-function login() {
-  var access = $('access').value
-  var xmlhttp = new XMLHttpRequest()
-  xmlhttp.onreadystatechange = function () {
-    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-      var msg = xmlhttp.responseText
-      if (msg != 0) {
-        alert('password error')
-      } else {
-        $('upbtn').removeAttribute('disabled')
+ 
+
+
+  <script type="text/javascript">
+    window.onload = function() {
+       console.log("页面加载完成");
+       
+    };
+ </script>
+
+<script defer type="text/javascript" src="post_config.js"></script>
+
+<script>
+  function login() {
+    var access = $('access').value
+    var xmlhttp = new XMLHttpRequest()
+    xmlhttp.onreadystatechange = function () {
+      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        var msg = xmlhttp.responseText
+        if (msg != 0) {
+          alert('password error')
+        } else {
+          $('upbtn').removeAttribute('disabled')
+        }
       }
     }
+    xmlhttp.open('POST', '/login.cgi', true)
+    xmlhttp.send('input=' + access)
   }
-  xmlhttp.open('POST', '/login.cgi', true)
-  xmlhttp.send('input=' + access)
-}
-function reboot() {
-  var xmlhttp = new XMLHttpRequest()
-  xmlhttp.onreadystatechange = function () {
-    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-      alert('重启中...')
+  function reboot() {
+    var xmlhttp = new XMLHttpRequest()
+    xmlhttp.onreadystatechange = function () {
+      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        alert('重启中...')
+      }
+    }
+    xmlhttp.open('POST', '/reboot.cgi', true)
+    xmlhttp.send('input=')
+  }
+  function setScene(){
+    this.location.href="/scene"
+  }
+
+  function setTvwall(){ //左右分屏以及切屏参数
+    
+    //tv_num = div_screen;
+    const table_tv=document.getElementById("chlist");
+      var id_k =1;
+      for(var j = 0;j<16;j++){
+        var tv_id = 'txtstream'  +id_k; 
+        var tv_name = 'stream'+id_k; 
+        var tv_id_16 = 'txtstream'  +(id_k+16); 
+        var tv_name_16 = 'stream'+(id_k+16); 
+        var cam_ch = 'ch'+id_k;
+        var cam_ch_16 = 'ch'+(id_k+16);
+
+        var sel_id='sel'+id_k;
+        var sel_id_16='sel'+(id_k+16);
+
+
+        var sel_name='sel'+id_k;
+        var sel_name_16='sel'+(id_k+16);
+
+        var sel_id='txtsel'+id_k;
+        var sel_id_16='txtsel'+(id_k+16);
+
+        let c='';
+        id_k++;
+      
+        //console.log(tv_id+" "+tv_id_16+" "+tv_name+" "+tv_name_16);
+        c = "\
+        <p><span><label>"+cam_ch+"</label><input type='text' id='"+tv_id+"' name='"+tv_name+"' size='16' class='s-inputxt' />\
+            <select name='"+sel_name+"' id='"+sel_id+"' class='s-ch-sel'>\
+              <option value='1'>通道1</option>\
+              <option value='2'>通道2</option>\
+              <option value='3'>通道3</option>\
+              <option value='4'>通道4</option>\
+            </select>\
+          </span>\
+          <span><label>"+cam_ch_16+"</label><input type='text' id='"+tv_id_16+"' name='"+tv_name_16+"' size='16' class='s-inputxt' />\
+            <select name='"+sel_name_16+"' id='"+sel_id_16+"' class='s-ch-sel'> \
+              <option value='1'>通道1</option>\
+              <option value='2'>通道2</option>\
+              <option value='3'>通道3</option>\
+              <option value='4'>通道4</option>\
+            </select>\
+          </span>\
+        </p>\
+        ";
+
+        table_tv.innerHTML +=c;
     }
   }
-  xmlhttp.open('POST', '/reboot.cgi', true)
-  xmlhttp.send('input=')
-}
-function setScene(){
-	this.location.href="/scene"
-}
 
-  </script>
-  <style type="text/css">
+
+</script>
+
+
+<style type="text/css">
 body {
   text-align: left;
   background-color: #c0deed;
@@ -256,8 +261,16 @@ body {
 }
 
 .s-inputxt {
-  width: 120px;
+  width: 110px;
 }
+
+.s-ch-sel{
+  width: 60px;
+  margin-left: 8px;
+  padding: 1px; /* 设置内边距为5像素 */
+}
+
+
 
 #main h3 {
   color: #66b3ff;
@@ -282,6 +295,8 @@ body {
   margin: 0 50px 15px 0;
 }
 
+
+
 .passw {
   margin-right: 20px;
 }
@@ -300,7 +315,7 @@ body {
 
 @media screen and (min-width: 900px) {
   fieldset {
-    max-width: 960px;
+    max-width: 1160px;
   }
 
   .middle {

@@ -59,6 +59,8 @@ void make_basic_config_setting_json_callback(char* buf, char* config_msg)
 void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 {
 	char address[32][32];
+	char sel[32];//每个摄像头的通道
+	
 	char plcCtrl[3][64];
 	char version[128];
 	u_char muxt4=0;
@@ -97,12 +99,13 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 		printf( " prepare 错误码:%d，错误原因:%s\r\n", result, errmsg );
 	}
 	while (SQLITE_ROW == sqlite3_step(stmt)) {
-		printf("id:%d address: %s, ip:%s,  type: %d\n",\
+		printf("id:%d address: %s, url:%s,  type: %d\n",\
 				sqlite3_column_int(stmt, 0),\
 				sqlite3_column_text(stmt, 1),\
 				sqlite3_column_text(stmt, 2),\
 				sqlite3_column_int(stmt, 3));
 		sprintf(address[sqlite3_column_int(stmt, 0)-1],"%s",sqlite3_column_text(stmt, 1));
+		sel[sqlite3_column_int(stmt, 0)-1]=*(sqlite3_column_text(stmt, 2)+strlen("/h264/ch"));
 	}
 	sqlite3_finalize(stmt);
 
@@ -223,6 +226,10 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				\"stream30\":\"%s\",\
 				\"stream31\":\"%s\",\
 				\"stream32\":\"%s\",\
+				\"sel1\":\"%c\",\"sel2\":\"%c\",\"sel3\":\"%c\",\"sel4\":\"%c\",\"sel5\":\"%c\",\"sel6\":\"%c\",\"sel7\":\"%c\",\"sel8\":\"%c\",\
+				\"sel9\":\"%c\",\"sel10\":\"%c\",\"sel11\":\"%c\",\"sel12\":\"%c\",\"sel13\":\"%c\",\"sel14\":\"%c\",\"sel15\":\"%c\",\"sel16\":\"%c\",\
+				\"sel17\":\"%c\",\"sel18\":\"%c\",\"sel19\":\"%c\",\"sel20\":\"%c\",\"sel21\":\"%c\",\"sel22\":\"%c\",\"sel23\":\"%c\",\"sel24\":\"%c\",\
+				\"sel25\":\"%c\",\"sel26\":\"%c\",\"sel27\":\"%c\",\"sel28\":\"%c\",\"sel29\":\"%c\",\"sel30\":\"%c\",\"sel31\":\"%c\",\"sel32\":\"%c\",\
 				\"left\":\"%s\",\
 				\"right\":\"%s\",\
 				\"stop\":\"%s\",\
@@ -249,6 +256,10 @@ void make_post_config_setting_json_callback(char* buf, JSONPOST_CFG config_msg)
 				address[20],address[21],address[22],address[23],\
 				address[24],address[25],address[26],address[27],\
 				address[28],address[29],address[30],address[31],\
+				sel[0],sel[1],sel[2],sel[3],sel[4],sel[5],sel[6],sel[7],\
+				sel[8],sel[9],sel[10],sel[11],sel[12],sel[13],sel[14],sel[15],\
+				sel[16],sel[17],sel[18],sel[19],sel[20],sel[21],sel[22],sel[23],\
+				sel[24],sel[25],sel[26],sel[27],sel[28],sel[29],sel[30],sel[31],\
 				plcCtrl[0],plcCtrl[1],plcCtrl[2],muxt4,dec,passwd,alarm_ip,alarmPort,eventType,\
 				hik_p,hik_t,version,\
   				plcAddr,plcPort,r0,r1,protocol
@@ -432,6 +443,7 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 {
 	uint8_t ret=0;
 	uint8_t * param;
+	char address[16];
 	uint8_t i=0;	
 	char stream[16];
 	sqlite3 * db = NULL; //声明sqlite关键结构指针
@@ -459,8 +471,18 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 			return -1;
 		}
 		if(verify_ip_address(param)){
-			sprintf(sql,"update camera set address = \"%s\" where id = %d",param,i+1);
+			sprintf(address,"%s",param);
+			sprintf(stream,"sel%d",i+1);
+			param = get_http_param_value(http_request->URI,stream);		/*获取修改后的通道地址*/
+			if(!param) {
+				printf("param %s not found\r\n",stream);
+				return -1;
+			}
+
+
+			sprintf(sql,"update camera set address = \"%s\", url = \"/h264/ch%s/main/av_stream\" where id = %d",address,param,i+1);
 			printf("  修改后的 ch %d sql: %s \r\n",i+1,sql);
+
 			ret= sqlite3_exec( db, sql, NULL, NULL, &errmsg );
 			if(ret!= SQLITE_OK )
 			{
@@ -470,16 +492,6 @@ uint8_t cgi_geshihua_process(http_request_t http_request)
 		
 	}
 
-	for(i=0;i<3;i++){
-		sprintf(stream,"camchn%d",i+1);
-		param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
-		if(!param) {
-			printf("param %s not found\r\n",stream);
-			return -1;
-		}
-		printf("update camera set address = \"%s\" where id = %d",param,i+1);
-		
-	}
 
 	sprintf(stream,"left");
 	param = get_http_param_value(http_request->URI,stream);		/*获取修改后的IP地址*/
