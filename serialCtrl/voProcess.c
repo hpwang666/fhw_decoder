@@ -172,6 +172,7 @@ int transVo(loop_ev env,conn_t c, custom_t customCmd)
 		//这里需要对9-3  里面超过的部分进行限制
 		allChns = voMutx;
 		if(sqlite3Chn==27) allChns = 5;//9-3
+		if(sqlite3Chn==30) allChns = 2;//6-5
 		log_info("cmd:%02x vo:%d sqlite3:%d",customCmd->cmd,voMutx,sqlite3Chn);
 		for(i=0;i<voMutx;i++){
 			memset((u_char *)&netCfg,0,sizeof(struct netConfig_st));

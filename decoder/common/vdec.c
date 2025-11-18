@@ -36,10 +36,18 @@ static VDEC_CHN_ATTR_S stVdecChnAttr[CHNS];
 	    astSize[i].u32Height =1080;
     }
     for(i = 4 ; i < s32ChnNum; i++) {
-    	astSize[i].u32Width	= 704;
+    	astSize[i].u32Width	= 960;//之前是704
 	    astSize[i].u32Height = 576;
     }
 
+	
+
+	astSize[8].u32Width	= 960;
+	astSize[8].u32Height = 576;
+	
+
+	astSize[10].u32Width	= 960;
+	astSize[10].u32Height = 576;
 	FY_MPI_VDEC_GetModParam(&mod_parm);
 	if(mod_parm.u32VBSource==0)
 	{

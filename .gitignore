@@ -11,6 +11,7 @@
 *.swp
 *.img
 *.tar
+*.zip
 tags
 *~
 **/.cproject
@@ -19,6 +20,7 @@ tags
 **/.vscode
 **/node_modules
 _decoder/
+serialCtrl_*/
 file_dec/
 lib/
 test/
