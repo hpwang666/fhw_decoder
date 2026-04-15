@@ -462,6 +462,7 @@ static int send_play(rtspClient_t rc)
 	str_t opt;
 	conn_t c=rc->conn;
 	str_t_ndup(rc->pool,opt,512);
+	generate_auth(rc,"PLAY");
 	str_t_append(opt,"PLAY ",5);
 	str_t_cat(opt,rc->sess->play);
 

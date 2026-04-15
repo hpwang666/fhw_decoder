@@ -1,4 +1,4 @@
-include ../Makefile.pub
+include ../Makefile_x86.pub
 
 INCLUDES=$(wildcard *.h)
 DEFS =

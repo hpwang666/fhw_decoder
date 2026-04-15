@@ -196,7 +196,7 @@ loop_ev init (void)
 	ev->eventQueue= queue_new(8,sizeof(struct event2plc_st));
 	
 	custom.ch = 0;
-	custom.cmd = 0x1a;
+	custom.cmd = 0x4a;
 	custom.stop = 0;//在这里没有用
 	queue_push(ev->voQueue,1,sizeof(struct custom_st),&custom);
 	pthread_create(&ev->uart_worker, NULL, _mainLoop, ev);

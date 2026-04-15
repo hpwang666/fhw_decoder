@@ -40,7 +40,7 @@ int transCmd(loop_ev env, custom_t cmdCmd)
 			return 0;
 	}
 
-	if ((0 == strncmp(camConn->camName, "DS-", 3))||(0 == strncmp(camConn->camName, "iDS", 3))||(0 == strncmp(camConn->camName, "UV-", 3)))
+	if ((0 == strncmp(camConn->camName, "DS-", 3))||(0 == strncmp(camConn->camName, "iDS", 3))||(0 == strncmp(camConn->camName, "UV-", 3))||(0 == strncmp(camConn->camName, "FHS9", 4)))
 	{
 		if (0 == strncmp(camConn->camName, _camName0, 14))
 			cam0407 = 0;
@@ -182,7 +182,7 @@ int transCmd(loop_ev env, custom_t cmdCmd)
 			httpClearConn(camConn->ct);
 		}
 	}else
-		printf("##warning:No support device type for %s!",camConn->camName);
+		printf(">>>>>No support device type for %s!",camConn->camName);
 
 	return 0;
 }

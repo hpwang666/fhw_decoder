@@ -438,7 +438,8 @@ static int send_play(rtspClient_t rc)
 {
 	str_t opt;
 	conn_t c=rc->conn;
-	str_t_ndup(rc->pool,opt,256);
+	str_t_ndup(rc->pool,opt,512);
+	generate_auth(rc,"PLAY");
 	str_t_append(opt,"PLAY rtsp://",12);
 	str_t_append(opt,c->peer_ip,strlen(c->peer_ip));
 
@@ -450,6 +451,9 @@ static int send_play(rtspClient_t rc)
 	
 	str_t_append(opt,"Session: ",9);
 	str_t_cat(opt,rc->sess->session);
+	str_t_append(opt,"\r\n",2);
+	str_t_append(opt,"Authorization: ",15);
+	str_t_cat(opt,rc->sess->auth);
 	str_t_append(opt,"\r\n",2);
 	str_t_append(opt,"Range: npt=0.000-\r\n\r\n",21);
 	
