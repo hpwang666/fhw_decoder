@@ -19,6 +19,7 @@ tags
 **/.settings
 **/.vscode
 **/node_modules
+**/miniDLNA
 _decoder/
 serialCtrl_*/
 file_dec/
