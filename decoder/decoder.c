@@ -39,6 +39,7 @@ decEnv_t create_dec_chns(void)
 		}
 
 		decEnv->dec25[i].hevcPPS=(HEVCPPS_t)calloc(1,sizeof(struct HEVCPPS_st));
+		decEnv->dec25[i].rbsp_buf=(u_char *)calloc(1,256);
 	}
 	return decEnv;
 }
@@ -49,5 +50,6 @@ void free_dec_chns(decEnv_t decEnv)
 	for(i=0;i<CHNS;i++){
 		dec_buf_free(decEnv->dec25[i].buf);
 		free(decEnv->dec25[i].hevcPPS);
+		if(decEnv->dec25[i].rbsp_buf) free(decEnv->dec25[i].rbsp_buf);
 	}
 }

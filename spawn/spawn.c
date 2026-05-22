@@ -23,7 +23,7 @@ static void on_sig_term(int sig)
 }
 
 
-static int spawn(const char *appPath, char **appArgv,const char *user,const char *group) {
+static int spawn(const char *appPath, const char *appArgs, const char *user, const char *group) {
 	pid_t child;
 	int i =0 ;
 	child = fork();					
@@ -33,6 +33,16 @@ static int spawn(const char *appPath, char **appArgv,const char *user,const char
 			int max_fd = 0;		
 			/* loose control terminal */
 			setsid();
+			if ( getuid() != 0) {
+				/* not root, check if user switch is requested */
+				if (*user) {
+					struct passwd *pwd_check = getpwnam(user);
+					if (pwd_check && pwd_check->pw_uid != getuid()) {
+						fprintf(stderr, "[supervise] error: cannot switch to user '%s' without root privileges\n", user);
+						exit(1);
+					}
+				}
+			}
 			if ( getuid() == 0) {//root   
 				struct group *grp = NULL;
 				struct passwd *pwd = NULL;
@@ -73,10 +83,15 @@ static int spawn(const char *appPath, char **appArgv,const char *user,const char
 			
 			for (i = 3; i < max_fd; i++)  close(i);
 			
-			char *b = (char*)malloc(strlen("exec ") + strlen(appPath) + 1);
+			size_t cmd_len = strlen("exec ") + strlen(appPath) + 1;
+			if (appArgs && *appArgs) cmd_len += 1 + strlen(appArgs);
+			char *b = (char*)malloc(cmd_len);
 			strcpy(b, "exec ");
 			strcat(b, appPath);
-			strcat(b," -a 0.0.0.0");
+			if (appArgs && *appArgs) {
+				strcat(b, " ");
+				strcat(b, appArgs);
+			}
 			/* exec the app */
 			execl("/bin/sh", "sh", "-c", b, (char *)NULL);
 			/* in nofork mode stderr is still open */
@@ -97,10 +112,11 @@ static int spawn(const char *appPath, char **appArgv,const char *user,const char
 
 static int show_help () {
 	const char *b = \
-"Usage: spawn [options] [-- <app> [app arguments]]\n" \
+"Usage: spawn [options]\n" \
 "\n" \
 "Options:\n" \
 " -f <path>     filename of the application \n" \
+" -a <args>     arguments passed to the application\n" \
 " -d            run at daemon mode\n"\
 " -u user       start processes using specified linux user\n" \
 " -g group      start processes using specified linux group\n"
@@ -113,6 +129,7 @@ int main(int argc, char **argv)
 	signed int i;
 	int daemon_mode = 0;
 	const char *app = NULL;
+	const char *app_args = "";
 	const char *user= "root";
 	const char *group= "root";
 	pid_t child = 0;
@@ -121,9 +138,10 @@ int main(int argc, char **argv)
 		show_help();
 		return -1;
 	}
-	while (-1 != (i = getopt(argc, argv, "f:u:g:hd"))) {
+	while (-1 != (i = getopt(argc, argv, "f:a:u:g:hd"))) {
 		switch(i) {
 		case 'f': app = optarg; break;
+		case 'a': app_args = optarg; break;
 		case 'd': daemon_mode = 1; break;
 		case 'u': user  = optarg; break;
 		case 'g': group = optarg; break;
@@ -159,7 +177,7 @@ int main(int argc, char **argv)
 					break;
 				}
 			}
-			child =spawn(app,NULL,user,group); 
+			child =spawn(app,app_args,user,group); 
 		} while (0);
 		sleep(5);
 	}

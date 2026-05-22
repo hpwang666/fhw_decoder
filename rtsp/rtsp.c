@@ -16,7 +16,7 @@
 #undef LOG_HANDLE
 //#define LOG_HANDLE
 #ifdef  LOG_HANDLE
-	#define log_debug(...) 
+	#define log_debug(...) {printf(__VA_ARGS__);printf("\r\n");}
     #define log_info(...) {zlog_info(zc,__VA_ARGS__);printf(__VA_ARGS__);printf("\r\n");}
 	#define log_err(...)  {zlog_error(zc,__VA_ARGS__);printf(__VA_ARGS__);printf("\r\n");}
 #else
@@ -268,10 +268,12 @@ static int rtsp_read_handle(event_t ev)
 			}
 			
 			if(rtspType == RTSP_TXT){
-				log_debug("<<<\n");
+#ifdef 	LOG_HANDLE			
+				log_debug("<<<");
 				for(rep=0;rep<rtpPkgLen;rep++)
-					log_debug("%c",*(buf->head+rep));
-			
+					printf("%c",*(buf->head+rep));
+				printf("\r\n");
+#endif
 				rep = do_response(rc,buf->head,buf->size);
 				switch (rep){
 					case RTSP200:
@@ -464,7 +466,7 @@ static int send_play(rtspClient_t rc)
 	str_t_ndup(rc->pool,opt,512);
 	generate_auth(rc,"PLAY");
 	str_t_append(opt,"PLAY ",5);
-	str_t_cat(opt,rc->sess->play);
+	str_t_cat(opt,rc->sess->contentBase);
 
 	str_t_append(opt," RTSP/1.0\r\n",11);
 	
@@ -477,8 +479,8 @@ static int send_play(rtspClient_t rc)
 	str_t_append(opt,"Range: npt=0.000-\r\n",19);
 	str_t_append(opt,"Authorization: ",15);
 	str_t_cat(opt,rc->sess->auth);
-	str_t_append(opt,"\r\n\r\n",4);
-	
+	str_t_append(opt,"\r\n",2);
+	str_t_append(opt,"\r\n",2);
 	rc->do_next =NULL;
 	rc->success = 1;
 	log_debug(">>>>play\n");

@@ -9,6 +9,7 @@
 #include "connet.h"
 #include "cache.h"
 #include "hik_event.h"
+#include "autoTask.h"
 
 
 #undef LOG_HANDLE
@@ -52,6 +53,7 @@ int event_read_handle(event_t event)
 		event2plc.ch=i;
 		event2plc.event=0;
 		log_debug("hik event[%d]:conn timeout",i);
+		//事件结束 有时候摄像头会探测服务可用性，也会触发 链接-->关闭 不发数据
 		queue_push(env->eventQueue,1,sizeof(struct event2plc_st),&event2plc);
 		event->timedout = 0;
 		cache_push(hikEventCache, node);
@@ -300,6 +302,9 @@ static int handEventVo(char *eventHost,loop_ev env)
 	custom.cmd = 0x1a;
 	custom.stop =0;//这里不需要 
 	queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
+
+	osalStartTimerEx(0,OSAL_VO,5000);
+
 
 	event2plc.ch=i;
 	event2plc.event=1;

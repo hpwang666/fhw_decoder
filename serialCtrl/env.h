@@ -37,6 +37,7 @@ struct _loop_ev
 	zlog_category_t *zc;
 	char plcCams[12][64];
 	camConnection camConn;
+	struct custom_st serialCustom;//保留手动切屏的指令
 	int ch0_elevation;//初始化的时候保存摄像头垂直位置
 	int ch0_azimuth;//初始化的时候保存摄像头水平位置
 	queue_t ptzQueue;

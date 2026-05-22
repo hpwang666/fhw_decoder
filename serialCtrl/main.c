@@ -17,6 +17,8 @@
 #include "plcBus.h" 
 
 #include "hik_event.h"
+#include "osal.h"
+#include "autoTask.h"
 
 
 #undef LOG_HANDLE
@@ -57,6 +59,10 @@ void *_mainLoop(void  *arg)
 					custom.cmd = ev->voType;
 					custom.stop = data[3];//在这里没有用
 					queue_push(ev->voQueue,1,sizeof(struct custom_st),&custom);
+					//保存手动指令
+					ev->serialCustom.ch = ev->channel;
+					ev->serialCustom.cmd = ev->voType;
+					ev->serialCustom.stop = data[3];//在这里没有用
 					break;
 				case 0x0a:
 					custom.ch = ev->channel;
@@ -124,7 +130,7 @@ void *_voLoop(void  *arg)
 			delta = get_current_ms();
 		}
 
-
+		osalRunSystem();
 		tmp = queue_get(ev->voQueue);
 		if(tmp){
 			transVo(ev,decConn,(custom_t)tmp->data);
@@ -132,7 +138,7 @@ void *_voLoop(void  *arg)
 		} 
 	
 	}
-
+	osalFree();
 	releasePlcBus();
 	free_event_server();
 	free_all_conn();
@@ -199,12 +205,20 @@ loop_ev init (void)
 	custom.cmd = 0x4a;
 	custom.stop = 0;//在这里没有用
 	queue_push(ev->voQueue,1,sizeof(struct custom_st),&custom);
+
+	ev->serialCustom.ch = 0;
+	ev->serialCustom.cmd = 0x4a;
+	ev->serialCustom.stop = 0;//在这里没有用
+
 	pthread_create(&ev->uart_worker, NULL, _mainLoop, ev);
 	pthread_create(&ev->vo_worker, NULL, _voLoop, ev);
 	pthread_create(&ev->http_worker, NULL, _httpLoop, ev);
 	
 	pthread_mutex_init(&ev->mutex, NULL);
 	pthread_mutex_init(&ev->mutex_cmd, NULL);
+
+	osalInitEnv();
+	osalAddTask(osal_auto_vo,OSALSTART);
 	return ev;
 }
 

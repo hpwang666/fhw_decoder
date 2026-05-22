@@ -17,7 +17,7 @@ int osal_printf(int task_id,int events)
 	VDEC_CHN_STAT_S pstStat;
 	if( events & OSALSTART){
 		printf("****osal start\n");
-		osalStartTimerEx(task_id,OSAL_PRINT1,1000);
+		osalStartTimerEx(task_id,OSAL_PRINT1,10000);
 		do_event ^= OSALSTART;
 	}
 	if ( events & OSAL_PRINT1 )

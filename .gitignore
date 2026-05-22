@@ -20,6 +20,9 @@ tags
 **/.vscode
 **/node_modules
 **/miniDLNA
+**/lvgl
+**/rtsp_rtmp
+**/osal
 _decoder/
 serialCtrl_*/
 file_dec/

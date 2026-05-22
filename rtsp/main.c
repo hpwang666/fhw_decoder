@@ -199,9 +199,10 @@ int main()
 
 	rtpPkg = malloc(sizeof(struct rtpPkg_st));
 	
-#if 0
-	rtsp[0] = init_rtsp_clients(list,"192.168.1.123",554,"admin","@Fhjt0717","/h265/ch1/main/av_stream");	
+	#if 0
+	rtsp[0] = init_rtsp_clients(list,"192.168.1.45",554,"admin","@Fhjt0717","/h264/ch1/main/av_stream");	
 	rtsp[0]->chn = 0;
+
 	rtsp[1] = init_rtsp_clients(list,"192.168.1.44",554,"admin","@Fhjt0717","/h264/ch1/main/av_stream");	
 	rtsp[1]->chn = 1;
 	rc[2] = init_rtsp_clients(list,"192.168.1.44",554,"admin","fhjt12345","/h264/ch1/main/av_stream");	

@@ -3,6 +3,7 @@
 #include "common.h"
 #include <time.h>
 
+#include "parasePPS.h"
 
 #ifdef FILE_RECORD_EN
 	extern FILE *fp;
@@ -35,7 +36,7 @@ int do_decode(decoder_t dec,int chn,int rtpType)
 	}
 	//	printf("size:%d\r\n",dec->buf->size);
 #ifdef FILE_RECORD_EN
-	if(fileCnt>100){
+	if(fileCnt>60){
 		if(fp){
 			printf("close\r\n");
 			fclose(fp);
@@ -147,6 +148,8 @@ int UnpackRTPH264( u_char *bufIN, size_t len, decoder_t dec)
 	size_t outLen = 0 ;
 	dec_buf_t bufOUT;
 	if (len < RTP_HEADLEN) return -1 ;
+
+
 	
 	//static time_t now,old;
 	u_char *pBufTmp = NULL;
@@ -159,6 +162,12 @@ int UnpackRTPH264( u_char *bufIN, size_t len, decoder_t dec)
 	
 	int bFinishFrame = 0 ;
 
+	
+	u_char h265_nal_type = (head1 >> 1) & 0x3f;
+	if (h265_nal_type >= 32 && h265_nal_type <= 49) {
+		//printf("h265 stream detected in h264 unpack, discard. nal_type=%d\r\n", h265_nal_type);
+		return -1;
+	}
 	
 	bufOUT = dec->buf;
 	//printf("%x ",nal);
@@ -282,11 +291,13 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 			outLen = len - RTP_HEADLEN - 3 ;
 			if(nal_fua == 0x13){
 				bFinishFrame =RTP_I;
+				//printf("RTP_I \n");
 				if(dec->hevcPPS->tiles_enabled_flag)
 					dec->slice_I_counter++;
 			} 
 			else  if(nal_fua == 0x01){
 				bFinishFrame = RTP_P;
+				//printf("RTP_P \n");
 				if(dec->hevcPPS->tiles_enabled_flag)
 					dec->slice_P_counter++;
 			}
@@ -316,12 +327,13 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 			case 1:
 				if( sliceType== 0x02){
 					bFinishFrame = RTP_P;
-					if(dec->hevcPPS->tiles_enabled_flag)
-						dec->slice_P_counter++;
+					//if(dec->hevcPPS->tiles_enabled_flag)
+					//	dec->slice_P_counter++;
 				}
 				else
-					bFinishFrame=RTP_PKG;//单包数据
-
+					bFinishFrame=RTP_P;//单包数据
+				dec->slice_P_counter++;
+					//printf("sliceType:%d\r\n",sliceType);
 				break;
 			case 32: // video parameter set (VPS)
 			case 33: // sequence parameter set (SPS)
@@ -329,7 +341,7 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 			case 39: // supplemental enhancement information (SEI)
 				bFinishFrame=RTP_PPS;
 				if(nal==34){
-					if(1==parase_pps(src,len- RTP_HEADLEN,dec->hevcPPS))	{
+					if(1==parase_pps(src,len- RTP_HEADLEN,dec->rbsp_buf,dec->hevcPPS))	{
 						dec->slice_I_counter=0;
 						dec->slice_P_counter=0;
 					}
@@ -342,19 +354,7 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 	return bFinishFrame;
 }
 
-int parase_pps(u_char *buf,int len,HEVCPPS_t hevcPPS)
-{
-	if(len<6) return -1;
-	hevcPPS->tiles_enabled_flag=*(buf+5)&0x80;
-	//printf("titles_enabled_flag:%02x\r\n",hevcPPS->tiles_enabled_flag);
-	if(hevcPPS->tiles_enabled_flag){
-		hevcPPS->num_tile_columns=((*(buf+5))>>3)&0x07;
-		hevcPPS->num_tile_rows=((*(buf+5))>>2)&0x01;
-		//printf("tile->columns:%d tile->rows:%d\r\n",hevcPPS->num_tile_columns,hevcPPS->num_tile_rows);
-		return 1;
-	}
-	return 0;
-}
+
 
 int make_seqc_right(u_char *bufIN, size_t len, int chn ,decoder_t dec)
 {
