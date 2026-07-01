@@ -23,6 +23,7 @@ tags
 **/lvgl
 **/rtsp_rtmp
 **/osal
+**/lvgl
 _decoder/
 serialCtrl_*/
 file_dec/

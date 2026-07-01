@@ -14,7 +14,7 @@
 
 
 #undef LOG_HANDLE
-//#define LOG_HANDLE
+#define LOG_HANDLE
 #ifdef  LOG_HANDLE
 	#define log_debug(...) {printf(__VA_ARGS__);printf("\r\n");}
     #define log_info(...) {zlog_info(zc,__VA_ARGS__);printf(__VA_ARGS__);printf("\r\n");}
@@ -432,7 +432,13 @@ static int send_setup(rtspClient_t rc)
 				str_t_cat(opt,rc->sess->control);
 			}
 		}
-		else str_t_cat(opt,rc->sess->control);
+		else {
+			str_t_append(opt,"rtsp://",7);
+			str_t_append(opt,c->peer_ip,strlen(c->peer_ip));
+			str_t_cat(opt,rc->sess->url);
+			str_t_append(opt,"/",1);
+			str_t_cat(opt,rc->sess->control);
+		}
 	}
 	else printf("no control\r\n");
 	str_t_append(opt," RTSP/1.0\r\n",11);
@@ -466,7 +472,28 @@ static int send_play(rtspClient_t rc)
 	str_t_ndup(rc->pool,opt,512);
 	generate_auth(rc,"PLAY");
 	str_t_append(opt,"PLAY ",5);
-	str_t_cat(opt,rc->sess->contentBase);
+	//str_t_cat(opt,rc->sess->contentBase);
+	if(rc->sess->control){
+		if(rc->sess->contentBase){
+			if(str_nstr((u_char *)rc->sess->control->data,(char *)rc->sess->contentBase->data,rc->sess->control->len))
+			{
+				log_debug(">>>found base url in control\n");
+				str_t_cat(opt,rc->sess->control);
+			}
+			else {
+				str_t_cat(opt,rc->sess->contentBase);
+				str_t_cat(opt,rc->sess->control);
+			}
+		}
+		else {
+			str_t_append(opt,"rtsp://",7);
+			str_t_append(opt,c->peer_ip,strlen(c->peer_ip));
+			str_t_cat(opt,rc->sess->url);
+			str_t_append(opt,"/",1);
+			str_t_cat(opt,rc->sess->control);
+		}
+	}
+	else printf("no control\r\n");
 
 	str_t_append(opt," RTSP/1.0\r\n",11);
 	

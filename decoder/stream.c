@@ -238,7 +238,6 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 	if (len < RTP_HEADLEN+1) {
 		printf("len is too small \r\n");
 
-		
 		return 0;
 	}
 	
@@ -246,17 +245,11 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 	u_char * src = bufIN + RTP_HEADLEN;
 	u_char head1 = * src; // 获取第一个字节
 	u_char head2 = * (src + 2); // 获取第3个字节
-	u_char head3 = * (src + 3); // 获取第3个字节
 	u_char nal = ((head1>>1) & 0x3f)	; // 
 	u_char flag = head2  ; // 获取FU header的前三位，判断当前是分包的开始、中间或结束
 	u_char nal_fua =  (head2 & 0x3f ); // FU_A nal  海康的只有I帧  和  P帧
-	u_char first_slice_segment=head2&0x80;
 
-	//这里判断并不严格，只是为单包P帧提供一个标记 slice_2
-	//u_char sliceType= (first_slice_segment==0x80)?((head2>>3)&0x03):(head3>>2)&0x03;
-
-	//slice_3	
-	u_char sliceType= (first_slice_segment==0x80)?((head2>>3)&0x03):(head3&0x03);
+	
 
 	u_char nalu_header0 = (u_char) (nal_fua<<1)|(*src &0x81);
 	u_char nalu_header1 = *(src+1);	  
@@ -264,7 +257,7 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 
 	
 	bufOUT = dec->buf;
-	//printf("%x %x %02x %02x\r\n",nal,nal_fua,sliceType,head2>>3);
+	//printf("%x %x %02x\r\n",nal,nal_fua,head2>>3);
 
 	if(((head1 << 5) & 0x20) | ((*(src+1) >> 3) & 0x1f)){
 		printf("skip \r\n");
@@ -284,12 +277,11 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 
 			outLen = len - RTP_HEADLEN +2+4-3 ;
 			dec->PKG_STARTED =1;
-			//printf("%x:%d \n",flag,seqc);
 		}
 		else if (flag & 0x40){ // 结束
 			pBufTmp = src + 3 ;
 			outLen = len - RTP_HEADLEN - 3 ;
-			if(nal_fua == 0x13){
+			if(nal_fua == 0x13){//||nal_fua == 0x02  0x02完全是为了单独适配吊具
 				bFinishFrame =RTP_I;
 				//printf("RTP_I \n");
 				if(dec->hevcPPS->tiles_enabled_flag)
@@ -325,15 +317,9 @@ int UnpackRTPH265( u_char *bufIN, size_t len, decoder_t dec)
 		dec_buf_append(bufOUT,pBufTmp,outLen);
 		switch(nal){
 			case 1:
-				if( sliceType== 0x02){
-					bFinishFrame = RTP_P;
-					//if(dec->hevcPPS->tiles_enabled_flag)
-					//	dec->slice_P_counter++;
-				}
-				else
-					bFinishFrame=RTP_P;//单包数据
-				dec->slice_P_counter++;
-					//printf("sliceType:%d\r\n",sliceType);
+				bFinishFrame = RTP_P;
+				if(dec->hevcPPS->tiles_enabled_flag)
+					dec->slice_P_counter++;
 				break;
 			case 32: // video parameter set (VPS)
 			case 33: // sequence parameter set (SPS)

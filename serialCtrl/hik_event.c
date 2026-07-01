@@ -303,7 +303,7 @@ static int handEventVo(char *eventHost,loop_ev env)
 	custom.stop =0;//这里不需要 
 	queue_push(env->voQueue,1,sizeof(struct custom_st),&custom);
 
-	osalStartTimerEx(0,OSAL_VO,5000);
+	osalStartTimerEx(0,OSAL_VO,8000);
 
 
 	event2plc.ch=i;

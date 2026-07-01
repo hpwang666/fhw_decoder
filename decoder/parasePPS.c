@@ -155,8 +155,8 @@ int parase_pps(u_char *buf, int len, u_char *rbsp_buf,HEVCPPS_t hevcPPS)
 		/* num_tile_rows_minus1 */
 		hevcPPS->num_tile_rows = bs_read_ue(&bs) + 1;
 
-		//printf("tiles_enabled: columns=%d rows=%d\r\n",
-		//       hevcPPS->num_tile_columns, hevcPPS->num_tile_rows);
+		printf("tiles_enabled: columns=%d rows=%d\r\n",
+		       hevcPPS->num_tile_columns, hevcPPS->num_tile_rows);
 	} else {
 		hevcPPS->num_tile_columns = 1;
 		hevcPPS->num_tile_rows = 1;

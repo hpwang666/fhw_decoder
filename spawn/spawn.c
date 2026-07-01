@@ -130,8 +130,8 @@ int main(int argc, char **argv)
 	int daemon_mode = 0;
 	const char *app = NULL;
 	const char *app_args = "";
-	const char *user= "root";
-	const char *group= "root";
+	const char *user = "";
+	const char *group = "";
 	pid_t child = 0;
 	
 	if (argc < 2) { /* no arguments given */
